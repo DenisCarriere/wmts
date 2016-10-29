@@ -1,14 +1,12 @@
 const convert = require('xml-js')
 
-// scheme:[//[user:password@]host[:port]][/]path[?query][#fragment]
 const TITLE = 'Web Map Tile Service'
 const NAME = 'WMTS Server'
 const SCHEME = 'http'
 const HOST = 'localhost'
 const PORT = 80
 const PATH = '/wmts'
-const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }`
-// http://localhost:80/wmts
+const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }` // http://localhost:80/wmts
 
 /**
  * ServiceIdentification JSON scheme
@@ -17,39 +15,58 @@ const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }`
  * @returns {ServiceIdentification}
  * @examples
  * ServiceIdentification('My Title')
- * //{
- * //  ServiceIdentification: [
- * //    Title
- * //    ServiceType
- * //    ServiceTypeVersion
- * //  ]
- * //}
+ * //= ServiceIdentification > [Title, ServiceType, ServiceTypeVersion]
  */
 function ServiceIdentification (title = TITLE) {
+  // Capabilities.ServiceIdentification.Title
   const Title = {
     type: 'element',
     name: 'ows:Title',
     elements: [{ type: 'text', text: title }],
   }
 
+  // Capabilities.ServiceIdentification.ServiceType
   const ServiceType = {
     type: 'element',
     name: 'ows:ServiceType',
     elements: [{ type: 'text', text: 'OGC WMTS' }],
   }
 
+  // Capabilities.ServiceIdentification.ServiceTypeVersion
   const ServiceTypeVersion = {
     type: 'element',
     name: 'ows:ServiceTypeVersion',
     elements: [{ type: 'text', text: '1.0.0' }],
   }
 
+  // Capabilities.ServiceIdentification
   const ServiceIdentification = {
     type: 'element',
     name: 'ows:ServiceIdentification',
     elements: [Title, ServiceType, ServiceTypeVersion],
   }
   return ServiceIdentification
+
+// WMTS page 32
+// TODO >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// <ows:ServiceIdentification>
+//   <ows:Title>World example Web Map Tile Service</ows:Title>
+//   <ows:Abstract>
+//     Example service that constrains some world layers in the
+//     GlobalCRS84Pixel Well-known scale set
+//   </ows:Abstract>
+//   <ows:Keywords>
+//     <ows:Keyword>World</ows:Keyword>
+//     <ows:Keyword>Global</ows:Keyword>
+//     <ows:Keyword>Digital Elevation Model</ows:Keyword>
+//     <ows:Keyword>Administrative Boundaries</ows:Keyword>
+//   </ows:Keywords>
+//   <ows:ServiceType>OGC WMTS</ows:ServiceType>
+//   <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+//   <ows:Fees>none</ows:Fees>
+//   <ows:AccessConstraints>none</ows:AccessConstraints>
+// </ows:ServiceIdentification>
+// TODO >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }
 
 /**
@@ -60,13 +77,7 @@ function ServiceIdentification (title = TITLE) {
  * @returns {ServiceProvider}
  * @examples
  * ServiceProvider('WMTS Server', 'http://localhost:80/wmts')
- * //{
- * //  ServiceProvider: [
- * //    ProviderName,
- * //    ProviderSite,
- * //    ServiceContact: [ IndividualName ]
- * //  ]
- * //}
+ * //= ServiceProvider > [ProviderName, ProviderSite, ServiceContact > IndividualName]
  */
 function ServiceProvider (name = NAME, uri = URI) {
   // Capabilities.ServiceProvider.ProviderName
@@ -107,76 +118,96 @@ function ServiceProvider (name = NAME, uri = URI) {
 }
 
 /**
- * OperationsMetadata JSON scheme
+ * GetCapabilities JSON scheme
  *
  * @param {string} uri URI of Service Provider
  * @returns {OperationsMetadata}
  * @examples
- * OperationsMetadata()
- * //{
- * //  OperationsMetadata: [
- * //    GetCapabilities,
- * //    GetTitle,
- * //    GetFeatureInfo
- * //  ]
- * //}
+ * Operation()
+ * //= Operation > DCP > HTTP > Get > Constraint > AllowedValues> Value
  */
-function OperationsMetadata (uri = URI ) {
-  // Capabilities.OperationsMetadata.GetCapabilities.DCP.HTTP
+function Operation (name: string, uri = URI ) {
+  // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get.Constraint.AllowedValues.Value
+  const Value = {
+    type: 'element',
+    name: 'ows:Value',
+    elements: [{ type: 'text', text: 'KVP' }],
+  }
+  /**
+   * TO DO: Text value was originally KVP (does it stand for anything?)
+   */
+
+  // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get.Constraint.AllowedValues
+  const AllowedValues = {
+    type: 'element',
+    name: 'ows:AllowedValues',
+    elements: [Value],
+  }
+
+  // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get.Constraint
+  const Constraint = {
+    type: 'element',
+    name: 'ows:Constraint',
+    attributes: {
+      name: 'GetEncoding',
+    },
+    elements: [AllowedValues],
+  }
+
+  // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get
   const Get = {
     type: 'element',
-    name: 'ows:ServiceProvider',
+    name: 'ows:Get',
     attributes: {
       'xlink:href': `${ uri }?`,
     },
     elements: [Constraint],
   }
 
-  // Capabilities.OperationsMetadata.GetCapabilities.DCP.HTTP
+  // Capabilities.OperationsMetadata.Operation.DCP.HTTP
   const HTTP = {
     type: 'element',
     name: 'ows:ServiceProvider',
     elements: [Get],
   }
 
-  // Capabilities.OperationsMetadata.GetCapabilities.DCP
+  // Capabilities.OperationsMetadata.Operation.DCP
   const DCP = {
     type: 'element',
     name: 'ows:ServiceProvider',
     elements: [HTTP],
   }
 
-  // Capabilities.OperationsMetadata.GetCapabilities
+  // Capabilities.OperationsMetadata.Operation
   const GetCapabilities = {
     type: 'element',
-    name: 'ows:ServiceProvider',
+    name: 'ows:Operation',
+    attributes: {
+      name,
+    },
     elements: [DCP],
   }
+  return GetCapabilities
+}
 
+/**
+ * OperationsMetadata JSON scheme
+ *
+ * @param {string} uri URI of Service Provider
+ * @returns {OperationsMetadata}
+ * @examples
+ * OperationsMetadata()
+ * //= OperationsMetadata > [GetCapabilities, GetTitle, GetFeatureInfo]
+ */
+function OperationsMetadata (uri = URI ) {
   // Capabilities.OperationsMetadata
   const OperationsMetadata = {
     type: 'element',
     name: 'ows:OperationsMetadata',
-    elements: [GetCapabilities, GetTile, GetFeatureInfo],
+    elements: [Operation('GetCapabilities'), Operation('GetTile'), Operation('GetFeatureInfo')],
   }
   return OperationsMetadata
 }
-
-
-// <ows:OperationsMetadata>
-//   <ows:Operation name="GetCapabilities">
-//     <ows:DCP>
-//       <ows:HTTP>
-//         <ows:Get xlink:href="http://204.62.18.179:8080/geoserver/gwc/service/wmts?">
-//           <ows:Constraint name="GetEncoding">
-//             <ows:AllowedValues>
-//               <ows:Value>KVP</ows:Value>
-//             </ows:AllowedValues>
-//           </ows:Constraint>
-//         </ows:Get>
-//       </ows:HTTP>
-//     </ows:DCP>
-//   </ows:Operation>
 
 /**
  * Capabilities JSON scheme
@@ -184,13 +215,7 @@ function OperationsMetadata (uri = URI ) {
  * @returns {Capabilities}
  * @examples
  * Capabilities()
- * //{
- * //  Capabilities: [
- * //    ServiceIdentification,
- * //    ServiceProvider,
- * //    OperationsMetadata
- * //  ]
- * //}
+ * //= Capabilities > [ServiceIdentification, ServiceProvider, OperationsMetadata]
  */
 function Capabilities() {
   const Capabilities = {

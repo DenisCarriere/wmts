@@ -1,12 +1,16 @@
 const convert = require('xml-js')
 
-const TITLE = 'Web Map Tile Service'
-const NAME = 'WMTS Server'
-const SCHEME = 'http'
-const HOST = 'localhost'
-const PORT = 80
-const PATH = '/wmts'
-const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }` // http://localhost:80/wmts
+interface Attribute {
+  [key: string]: string
+}
+
+interface Element {
+  type: string
+  name?: string
+  text?: string
+  elements?: Array<Element>
+  attributes?: Attribute
+}
 
 /**
  * ServiceIdentification JSON scheme
@@ -17,56 +21,72 @@ const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }` // http://localhost:80/
  * ServiceIdentification('My Title')
  * //= ServiceIdentification > [Title, ServiceType, ServiceTypeVersion]
  */
-function ServiceIdentification (title = TITLE) {
+function ServiceIdentification (title: string, abstract: string, keywords: Array<any>) {
   // Capabilities.ServiceIdentification.Title
-  const Title = {
+  const Title: Element = {
     type: 'element',
     name: 'ows:Title',
     elements: [{ type: 'text', text: title }],
   }
 
+  // Capabilities.ServiceIdentification.Abstract
+  const Abstract: Element = {
+    type: 'element',
+    name: 'ows:Abstract',
+    elements: [{ type: 'text', text: abstract }],
+  }
+
+  // Capabilities.ServiceIdentification.Keywords.Keyword
+  function Keyword (text: string): Element {
+    return {
+      type: 'element',
+      name: 'ows:Keyword',
+      elements: [{ type: 'text', text: String(text) }],
+    }
+  }
+
+  // Capabilities.ServiceIdentification.Keywords
+  const Keywords: Element = {
+    type: 'element',
+    name: 'ows:Keywords',
+    elements: keywords.map(keyword => Keyword(keyword)),
+  }
+
   // Capabilities.ServiceIdentification.ServiceType
-  const ServiceType = {
+  const ServiceType: Element = {
     type: 'element',
     name: 'ows:ServiceType',
     elements: [{ type: 'text', text: 'OGC WMTS' }],
   }
 
   // Capabilities.ServiceIdentification.ServiceTypeVersion
-  const ServiceTypeVersion = {
+  const ServiceTypeVersion: Element = {
     type: 'element',
     name: 'ows:ServiceTypeVersion',
     elements: [{ type: 'text', text: '1.0.0' }],
   }
 
+  // Capabilities.ServiceIdentification.Fees
+  const Fees: Element = {
+    type: 'element',
+    name: 'ows:Fees',
+    elements: [{ type: 'text', text: 'none' }],
+  }
+
+  // Capabilities.ServiceIdentification.AccessConstraints
+  const AccessConstraints: Element = {
+    type: 'element',
+    name: 'ows:AccessConstraints',
+    elements: [{ type: 'text', text: 'none' }],
+  }
+
   // Capabilities.ServiceIdentification
-  const ServiceIdentification = {
+  const ServiceIdentification: Element = {
     type: 'element',
     name: 'ows:ServiceIdentification',
-    elements: [Title, ServiceType, ServiceTypeVersion],
+    elements: [Title, Abstract, Keywords, ServiceType, ServiceTypeVersion, Fees, AccessConstraints],
   }
   return ServiceIdentification
-
-// WMTS page 32
-// TODO >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// <ows:ServiceIdentification>
-//   <ows:Title>World example Web Map Tile Service</ows:Title>
-//   <ows:Abstract>
-//     Example service that constrains some world layers in the
-//     GlobalCRS84Pixel Well-known scale set
-//   </ows:Abstract>
-//   <ows:Keywords>
-//     <ows:Keyword>World</ows:Keyword>
-//     <ows:Keyword>Global</ows:Keyword>
-//     <ows:Keyword>Digital Elevation Model</ows:Keyword>
-//     <ows:Keyword>Administrative Boundaries</ows:Keyword>
-//   </ows:Keywords>
-//   <ows:ServiceType>OGC WMTS</ows:ServiceType>
-//   <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
-//   <ows:Fees>none</ows:Fees>
-//   <ows:AccessConstraints>none</ows:AccessConstraints>
-// </ows:ServiceIdentification>
-// TODO >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }
 
 /**
@@ -79,37 +99,37 @@ function ServiceIdentification (title = TITLE) {
  * ServiceProvider('WMTS Server', 'http://localhost:80/wmts')
  * //= ServiceProvider > [ProviderName, ProviderSite, ServiceContact > IndividualName]
  */
-function ServiceProvider (name = NAME, uri = URI) {
+function ServiceProvider (name: string, uri: string) {
   // Capabilities.ServiceProvider.ProviderName
-  const ProviderName = {
+  const ProviderName: Element = {
     type: 'element',
     name: 'ows:ProviderName',
     elements: [{ type: 'text', text: uri }],
   }
 
   // Capabilities.ServiceProvider.ProviderSite
-  const ProviderSite = {
+  const ProviderSite: Element = {
     type: 'element',
     name: 'ows:ProviderSite',
     attributes: { 'xlink:href': uri },
   }
 
   // Capabilities.ServiceProvider.ServiceContact.IndividualName
-  const IndividualName = {
+  const IndividualName: Element = {
     type: 'element',
     name: 'ows:IndividualName',
     elements: [{ type: 'text', text: name }],
   }
 
   // Capabilities.ServiceProvider.ServiceContact
-  const ServiceContact = {
+  const ServiceContact: Element = {
     type: 'element',
     name: 'ows:ServiceContact',
     elements: [IndividualName],
   }
 
   // Capabilities.ServiceProvider
-  const ServiceProvider = {
+  const ServiceProvider: Element = {
     type: 'element',
     name: 'ows:ServiceProvider',
     elements: [ProviderName, ProviderSite, ServiceContact],
@@ -126,9 +146,9 @@ function ServiceProvider (name = NAME, uri = URI) {
  * Operation()
  * //= Operation > DCP > HTTP > Get > Constraint > AllowedValues> Value
  */
-function Operation (name: string, uri = URI ) {
+function Operation (name: string, uri: string ): Element {
   // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get.Constraint.AllowedValues.Value
-  const Value = {
+  const Value: Element = {
     type: 'element',
     name: 'ows:Value',
     elements: [{ type: 'text', text: 'KVP' }],
@@ -138,14 +158,14 @@ function Operation (name: string, uri = URI ) {
    */
 
   // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get.Constraint.AllowedValues
-  const AllowedValues = {
+  const AllowedValues: Element = {
     type: 'element',
     name: 'ows:AllowedValues',
     elements: [Value],
   }
 
   // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get.Constraint
-  const Constraint = {
+  const Constraint: Element = {
     type: 'element',
     name: 'ows:Constraint',
     attributes: {
@@ -155,7 +175,7 @@ function Operation (name: string, uri = URI ) {
   }
 
   // Capabilities.OperationsMetadata.Operation.DCP.HTTP.Get
-  const Get = {
+  const Get: Element = {
     type: 'element',
     name: 'ows:Get',
     attributes: {
@@ -165,21 +185,21 @@ function Operation (name: string, uri = URI ) {
   }
 
   // Capabilities.OperationsMetadata.Operation.DCP.HTTP
-  const HTTP = {
+  const HTTP: Element = {
     type: 'element',
     name: 'ows:ServiceProvider',
     elements: [Get],
   }
 
   // Capabilities.OperationsMetadata.Operation.DCP
-  const DCP = {
+  const DCP: Element = {
     type: 'element',
     name: 'ows:ServiceProvider',
     elements: [HTTP],
   }
 
   // Capabilities.OperationsMetadata.Operation
-  const GetCapabilities = {
+  const GetCapabilities: Element = {
     type: 'element',
     name: 'ows:Operation',
     attributes: {
@@ -199,12 +219,12 @@ function Operation (name: string, uri = URI ) {
  * OperationsMetadata()
  * //= OperationsMetadata > [GetCapabilities, GetTitle, GetFeatureInfo]
  */
-function OperationsMetadata (uri = URI ) {
+function OperationsMetadata (uri: string ): Element {
   // Capabilities.OperationsMetadata
-  const OperationsMetadata = {
+  const OperationsMetadata: Element = {
     type: 'element',
     name: 'ows:OperationsMetadata',
-    elements: [Operation('GetCapabilities'), Operation('GetTile'), Operation('GetFeatureInfo')],
+    elements: [Operation('GetCapabilities', uri), Operation('GetTile', uri), Operation('GetFeatureInfo', uri)],
   }
   return OperationsMetadata
 }
@@ -217,8 +237,8 @@ function OperationsMetadata (uri = URI ) {
  * Capabilities()
  * //= Capabilities > [ServiceIdentification, ServiceProvider, OperationsMetadata]
  */
-function Capabilities() {
-  const Capabilities = {
+function Capabilities(options: GetCapabilities): Element {
+  const Capabilities: Element = {
     type: 'element',
     name: 'Capabilities',
     attributes: {
@@ -230,11 +250,14 @@ function Capabilities() {
       'xsi:schemaLocation': 'http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd',
       version: '1.0.0',
     },
-    elements: [ ServiceIdentification(), ServiceProvider(), OperationsMetadata() ],
+    elements: [
+      ServiceIdentification(options.title, options.abstract, options.keywords),
+      ServiceProvider(options.name, options.uri),
+      OperationsMetadata(options.uri),
+    ],
   }
   return Capabilities
 }
-
 
 // ServiceMetadata
 // Tile
@@ -247,8 +270,25 @@ function Capabilities() {
 // getTile(request : GetTile) : Tile Response
 // getFeatureInfo(request : GetFeatureInfo) : FeatureInfo Response
 
-export function getCapabilities() {
-  const options = { compact: false, spaces: 4 }
-  const declaration = { attributes: { version: '1.0', encoding: 'utf-8' }}
-  return convert.js2xml({ declaration, elements: [ Capabilities() ]}, options)
+interface GetCapabilities {
+  title: string
+  name: string
+  uri: string
+  abstract: string
+  keywords: Array<any>
 }
+
+export function getCapabilities(options: GetCapabilities): string {
+  const declaration = { attributes: { version: '1.0', encoding: 'utf-8' }}
+  return convert.js2xml({ declaration, elements: [ Capabilities(options) ]}, { compact: false, spaces: 4 })
+}
+
+// const wmts = getCapabilities({
+//   uri: 'http://localhost:5000/wmts',
+//   name: 'Denis',
+//   title: 'This is Title',
+//   abstract: 'Abstract',
+//   keywords: ['words', 1324, 'more words'],
+// })
+
+// console.log(wmts)

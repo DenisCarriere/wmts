@@ -1,27 +1,15 @@
-const convert = require('xml-js')
-
-interface Attribute {
-  [key: string]: string
-}
-
-interface Element {
-  type: string
-  name?: string
-  text?: string
-  elements?: Array<Element>
-  attributes?: Attribute
-}
+import { js2xml, Element } from 'xml-js'
 
 /**
  * ServiceIdentification JSON scheme
  *
  * @param {string} [title]
  * @returns {ServiceIdentification}
- * @examples
+ * @example
  * ServiceIdentification('My Title')
  * //= ServiceIdentification > [Title, ServiceType, ServiceTypeVersion]
  */
-function ServiceIdentification (title: string, abstract: string, keywords: Array<any>) {
+function ServiceIdentification (title: string, abstract: string, keywords: Array<string>) {
   // Capabilities.ServiceIdentification.Title
   const Title: Element = {
     type: 'element',
@@ -95,7 +83,7 @@ function ServiceIdentification (title: string, abstract: string, keywords: Array
  * @param {string} name Name of Service Provider
  * @param {string} uri URI of Service Provider
  * @returns {ServiceProvider}
- * @examples
+ * @example
  * ServiceProvider('WMTS Server', 'http://localhost:80/wmts')
  * //= ServiceProvider > [ProviderName, ProviderSite, ServiceContact > IndividualName]
  */
@@ -142,7 +130,7 @@ function ServiceProvider (name: string, uri: string) {
  *
  * @param {string} uri URI of Service Provider
  * @returns {OperationsMetadata}
- * @examples
+ * @example
  * Operation()
  * //= Operation > DCP > HTTP > Get > Constraint > AllowedValues> Value
  */
@@ -215,7 +203,7 @@ function Operation (name: string, uri: string ): Element {
  *
  * @param {string} uri URI of Service Provider
  * @returns {OperationsMetadata}
- * @examples
+ * @example
  * OperationsMetadata()
  * //= OperationsMetadata > [GetCapabilities, GetTitle, GetFeatureInfo]
  */
@@ -233,7 +221,7 @@ function OperationsMetadata (uri: string ): Element {
  * Capabilities JSON scheme
  *
  * @returns {Capabilities}
- * @examples
+ * @example
  * Capabilities()
  * //= Capabilities > [ServiceIdentification, ServiceProvider, OperationsMetadata]
  */
@@ -280,15 +268,16 @@ interface GetCapabilities {
 
 export function getCapabilities(options: GetCapabilities): string {
   const declaration = { attributes: { version: '1.0', encoding: 'utf-8' }}
-  return convert.js2xml({ declaration, elements: [ Capabilities(options) ]}, { compact: false, spaces: 4 })
+  const xml = js2xml({ declaration, elements: [ Capabilities(options) ]}, { compact: false, spaces: 4 })
+  return xml
 }
 
-// const wmts = getCapabilities({
-//   uri: 'http://localhost:5000/wmts',
-//   name: 'Denis',
-//   title: 'This is Title',
-//   abstract: 'Abstract',
-//   keywords: ['words', 1324, 'more words'],
-// })
+const wmts = getCapabilities({
+  uri: 'http://localhost:5000/wmts',
+  name: 'Denis',
+  title: 'This is Title',
+  abstract: 'Abstract',
+  keywords: ['words', 1324, 'more words'],
+})
 
-// console.log(wmts)
+console.log(wmts)

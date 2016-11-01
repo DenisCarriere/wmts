@@ -1,49 +1,46 @@
-// Type definitions for xml-js
+// Type definitions for xml-js 0.9.5
 // Project: https://github.com/nashwaan/xml-js
 // Definitions by: Denis Carriere <https://github.com/DenisCarriere>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-declare module "xml-js" {
-    interface Attribute {
-        [key: string]: string
-    }
-
-    type Types = "comment" | "element" | "cdata" | "text"
-
+declare module 'xml-js' {
     export interface ElementCompact {
         [key: string]: any
-        _cdata?: string
-        _comment?: string
-        _text?: string
-        _declaration?: DeclarationCompact
-        _attributes?: Attribute
-    }
-
-    interface DeclarationCompact {
-        _attributes: {
-            version: string
-            encoding: string
+        _attributes?: {
+            [key: string]: number | number
         }
+        _cdata?: string | number
+        _comment?: string | number
+        _declaration?: {
+            _attributes?: {
+                version?: string | number
+                encoding?: string | number
+            }
+        }
+        _text?: string | number
     }
 
     export interface Element {
-        type?: Types
-        declaration?: Declaration
-        name?: string
-        text?: string
-        elements?: Array<Element>
-        attributes?: Attribute
-    }
-
-    interface Declaration {
-        attributes: {
-            version: string
-            encoding: string
+        attributes?: {
+            [key: string]: string | number
         }
+        cdata?: string | number
+        comment?: string | number
+        declaration?: {
+            attributes?: {
+                version: string | number
+                encoding: string | number
+            }
+        }
+        elements?: Array<Element>
+        text?: string | number
+        type?: string | number
+        name?: string | number
     }
 
-    interface XML2JSOptions extends ChangingKeyNames, IgnoreOptions {
+    interface XML2JS extends ChangingKeyNames, IgnoreOptions {
         compact?: boolean
+        spaces?: number | string
         trim?: boolean
         sanitize?: boolean
         nativeType?: boolean
@@ -51,8 +48,9 @@ declare module "xml-js" {
         alwaysChildren?: boolean
     }
 
-    interface JS2XMLOptions extends ChangingKeyNames, IgnoreOptions {
-        spaces?: number
+    interface JS2XML extends ChangingKeyNames, IgnoreOptions {
+        spaces?: number | string
+        trim?: boolean
         compact?: boolean
         fullTagEmptyElement?: boolean
     }
@@ -77,12 +75,8 @@ declare module "xml-js" {
         elementsKey?: string
     }
 
-    interface JS2XMLOptionsCompact extends JS2XMLOptions {
-        compact: true
-    }
-
-    export function js2xml(json: ElementCompact, options?: JS2XMLOptionsCompact): string
-    export function json2xml(json: ElementCompact, options?: JS2XMLOptionsCompact): string
-    export function js2xml(json: Element, options?: JS2XMLOptions): string
-    export function json2xml(json: Element, options?: JS2XMLOptions): string
+    export function js2xml(json: Element | ElementCompact, options?: JS2XML): string;
+    export function json2xml(json: Element | ElementCompact, options?: JS2XML): string;
+    export function xml2json(xml: string, options?: XML2JS): any;
+    export function xml2js(xml: string, options?: XML2JS): any;
 }

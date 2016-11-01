@@ -11,9 +11,6 @@ const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }` // http://localhost:80/
 
 test('getCapabilities', t => {
   const capabilities = wmts.getCapabilities({
-    name: NAME,
-    abstract: 'abstract',
-    keywords: ['key', 'words'],
     uri: URI,
     title: TITLE,
   })

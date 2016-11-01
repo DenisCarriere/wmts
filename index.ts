@@ -652,9 +652,9 @@ export function getCapabilities(options: GetCapabilities): string {
   return xml
 }
 
-const wmts = getCapabilities({
-  uri: 'http://localhost:5000/WMTS',
-  title: 'service_name',
-})
+// const wmts = getCapabilities({
+//   uri: 'http://localhost:5000/WMTS',
+//   title: 'service_name',
+// })
 
-console.log(wmts)
+// console.log(wmts)

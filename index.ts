@@ -648,7 +648,7 @@ interface GetCapabilities {
 
 export function getCapabilities(options: GetCapabilities): string {
   const declaration = { attributes: { version: '1.0', encoding: 'utf-8' }}
-  const xml = convert.js2xml({ declaration, elements: [ Capabilities(options) ]}, { spaces: 0 })
+  const xml = convert.js2xml({ declaration, elements: [ Capabilities(options) ]}, { spaces: 4 })
   return xml
 }
 
@@ -656,3 +656,5 @@ const wmts = getCapabilities({
   uri: 'http://localhost:5000/WMTS',
   title: 'service_name',
 })
+
+console.log(wmts)

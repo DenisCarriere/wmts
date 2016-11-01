@@ -1,6 +1,6 @@
 {
   "name": "wmts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Flexible WMTS scheme for Javascript applications",
   "main": "index.js",
   "jsnext:main": "index.js",
@@ -49,6 +49,6 @@
     "tap": true
   },
   "dependencies": {
-    "xml-js": "^0.9.5"
+    "xml-js": "^0.9.6"
   }
 }

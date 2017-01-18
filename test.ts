@@ -1,18 +1,30 @@
-import test from 'ava'
-import * as wmts from './index'
+import * as convert from 'xml-js'
+import * as path from 'path'
+import * as fs from 'fs'
+import * as wmts from './'
 
-const TITLE = 'Web Map Tile Service'
-const NAME = 'WMTS Server'
-const SCHEME = 'http'
-const HOST = 'localhost'
-const PORT = 80
-const PATH = '/wmts'
-const URI = `${ SCHEME }://${ HOST }:${ PORT }${ PATH }` // http://localhost:80/wmts
+const title = 'Tile Service'
+const minzoom = 10
+const maxzoom = 18
+const uri = 'http://localhost:80/WMTS'
+const keywords = ['world', 'imagery', 'wmts']
 
-test('getCapabilities', t => {
-  const capabilities = wmts.getCapabilities({
-    uri: URI,
-    title: TITLE,
-  })
-  t.true(!!capabilities)
+/**
+ * Jest compare helper
+ *
+ * @param {ElementCompact} json
+ * @param {string} fixture
+ */
+function compare(json: any, fixture: string) {
+  const xml = convert.js2xml(json, {compact: true, spaces: 2})
+  if (process.env.REGEN) { fs.writeFileSync(fixture, xml, 'utf-8') }
+  expect(xml).toBe(fs.readFileSync(fixture, 'utf-8'))
+}
+
+describe('Capabilities', () => {
+  test('GoogleMapsCompatible', () => compare(wmts.GoogleMapsCompatible(minzoom, maxzoom), path.join('fixtures', 'GoogleMapsCompatible.xml')))
+  test('TileMatrix', () => compare(wmts.TileMatrix(minzoom, maxzoom), path.join('fixtures', 'TileMatrix.xml')))
+  test('ServiceIdentification', () => compare(wmts.ServiceIdentification({title, keywords}), path.join('fixtures', 'ServiceIdentification.xml')))
+  test('Keywords', () => compare(wmts.Keywords(keywords), path.join('fixtures', 'Keywords.xml')))
+  test('OperationsMetadata', () => compare(wmts.OperationsMetadata(uri), path.join('fixtures', 'OperationsMetadata.xml')))
 })

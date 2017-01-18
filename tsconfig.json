@@ -1,19 +1,17 @@
 {
-    "compileOnSave": true,
     "compilerOptions": {
         "module": "commonjs",
-        "target": "ES6",
+        "target": "es6",
         "noImplicitAny": true,
-        "removeComments": false,
-        "preserveConstEnums": true,
-        "sourceMap": true,
-        "noEmitOnError": true
+        "noImplicitThis": true,
+        "strictNullChecks": true,
+        "forceConsistentCasingInFileNames": true
     },
-    "exclude": [
-        "node_modules"
-    ],
-    "filesGlob": [
-        "./**/*.ts",
-        "typings/xml-js.d.ts"
+    "files": [
+        "index.ts",
+        "test.ts",
+        "utils/index.ts",
+        "utils/utils.ts",
+        "utils/utils.test.ts"
     ]
 }

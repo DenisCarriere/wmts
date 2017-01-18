@@ -1,11 +1,12 @@
 {
   "name": "wmts",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Flexible WMTS scheme for Javascript applications",
   "main": "index.js",
   "jsnext:main": "index.js",
   "scripts": {
-    "test": "npm run lint && nyc ava",
+    "test": "npm run lint && jest --coverage",
+    "docs": "tsc && documentation readme index.js -c documentation.yml --section=API --shallow",
     "lint": "tsc && tslint index.ts test.ts && documentation lint index.js"
   },
   "repository": {
@@ -21,13 +22,17 @@
     "url": "https://github.com/DenisCarriere/wmts/issues"
   },
   "homepage": "https://github.com/DenisCarriere/wmts#readme",
+  "dependencies": {
+    "@types/xml-js": "^0.9.0",
+    "xml-js": "^0.9.7"
+  },
   "devDependencies": {
+    "@types/jest": "^16.0.4",
     "@types/node": "^6.0.46",
-    "ava": "^0.16.0",
     "coveralls": "^2.11.14",
-    "nyc": "^8.3.2",
+    "jest-cli": "^18.1.0",
     "tslint": "^3.15.1",
-    "typescript": "^2.0.6"
+    "typescript": "^2.1.5"
   },
   "keywords": [
     "gis",
@@ -40,16 +45,9 @@
     "ogc",
     "scheme"
   ],
-  "ava": {
-    "files": [
-      "test.js"
-    ],
-    "concurrency": 5,
-    "failFast": true,
-    "tap": true
+  "jest": {
+    "verbose": true,
+    "collectCoverage": true
   },
-  "dependencies": {
-    "@types/xml-js": "^0.9.0",
-    "xml-js": "^0.9.6"
-  }
+  "testEnvironment": "node"
 }

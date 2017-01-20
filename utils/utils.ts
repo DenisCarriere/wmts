@@ -1,4 +1,4 @@
-import * as _ from 'lodash'
+import * as chalk from 'chalk'
 
 /**
  * Generate an integer Array containing an arithmetic progression.
@@ -41,4 +41,22 @@ export function range(start: number, stop?: number, step?: number): number[] {
  */
 export function clean(obj: any) {
   return JSON.parse(JSON.stringify(obj))
+}
+
+/**
+ * Pretty Error message
+ */
+export function error(...message: any[]) {
+  console.log(chalk.bgRed.white('[Error]' + message.join(' ')))
+  throw new Error(message.join(' '))
+}
+
+/**
+ * Normalize URL
+ *
+ * @param {string} url
+ * @returns {string} Normalized URL
+ */
+export function normalize(url: string) {
+  return url && url.replace(/$\//, '')
 }

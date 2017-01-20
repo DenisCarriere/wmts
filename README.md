@@ -1,5 +1,11 @@
 # WMTS
 
+[![Build Status](https://travis-ci.org/DenisCarriere/wmts.svg?branch=master)](https://travis-ci.org/DenisCarriere/wmts)
+[![Circle CI](https://circleci.com/gh/DenisCarriere/wmts.svg?style=svg)](https://circleci.com/gh/DenisCarriere/wmts)
+[![Coverage Status](https://coveralls.io/repos/github/DenisCarriere/wmts/badge.svg?branch=master)](https://coveralls.io/github/DenisCarriere/wmts?branch=master)
+[![npm version](https://badge.fury.io/js/wmts.svg)](https://badge.fury.io/js/wmts)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/DenisCarriere/wmts/master/LICENSE)
+
 Flexible WMTS scheme for Javascript applications.
 
 ## Install
@@ -15,10 +21,14 @@ import * as wmts from 'wmts'
 
 const xml = wmts.getCapabilities({
   uri: 'http://localhost:5000/WMTS',
-  title: 'service_name',
+  title: 'Tile Service XYZ',
+  identifier: 'service-123',
+  abstract: '© OSM data',
+  keyword: ['world', 'imagery', 'wmts'],
   format: 'png',
   minzoom: 10,
-  maxzoom: 18
+  maxzoom: 18,
+  bbox: [-180, -85, 180, 85]
 })
 ```
 
@@ -62,17 +72,17 @@ Capabilities JSON scheme
 **Parameters**
 
 -   `options`  
-    -   `options.uri` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+    -   `options.url` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** <required>
 
 **Examples**
 
 ```javascript
 Capabilities({
-  uri: 'http://localhost:5000'
+  url: 'http://localhost:5000'
 })
 ```
 
-Returns **ElementCompact** 
+Returns **ElementCompact** JSON scheme
 
 ### GoogleMapsCompatible
 
@@ -114,12 +124,12 @@ ServiceIdentification JSON scheme
 
 **Parameters**
 
--   `options`   (optional, default `{}`)
-    -   `options.title` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-    -   `options.abstract` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-    -   `options.keywords` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)>** 
-    -   `options.accessConstraints` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
-    -   `options.fees` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** 
+-   `options`  
+    -   `options.title` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** [required] Title
+    -   `options.abstract` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Abstract
+    -   `options.keywords` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)>** Keywords
+    -   `options.accessConstraints` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Access Constraints
+    -   `options.fees` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Fees
 
 **Examples**
 
@@ -155,7 +165,7 @@ OperationsMetadata JSON scheme
 
 **Parameters**
 
--   `uri` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** URI of Service Provider
+-   `url` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** URL of Service Provider
 
 **Examples**
 
@@ -198,6 +208,51 @@ Get JSON scheme
 ```javascript
 Get()
 //= Get > Constraint > AllowedValues> Value
+```
+
+Returns **ElementCompact** JSON scheme
+
+### Contents
+
+Capabilities.Contents JSON scheme
+
+**Parameters**
+
+-   `title` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Title of Service
+-   `uri` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** URI of Service Provider
+-   `options`  
+
+**Examples**
+
+```javascript
+Contents()
+//= Contents > [Layer, TileMatrixSet, TileMatrixSet]
+```
+
+Returns **[Element](https://developer.mozilla.org/en-US/docs/Web/API/Element)** 
+
+### Layer
+
+Capabilities.Contents.Layer JSON scheme
+
+**Parameters**
+
+-   `options`  
+    -   `options.title` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** [required] Title
+    -   `options.url` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** [required] URL
+    -   `options.format` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** [required] Format 'png' | 'jpeg' | 'jpg'
+    -   `options.abstract` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Abstract
+    -   `options.identifier` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** Identifier
+    -   `options.bbox` **BBox** BBox [west, south, east, north]
+
+**Examples**
+
+```javascript
+Layer({
+  title: 'Tile Service'
+  url: 'http://localhost:5000/wmts'
+  format: 'jpg'
+})
 ```
 
 Returns **ElementCompact** JSON scheme

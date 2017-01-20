@@ -2,7 +2,7 @@ const wmts = require('../')
 
 console.log(`
 wmts.getCapabilities({
-  uri: 'http://localhost:5000/WMTS',
+  url: 'http://localhost:5000/WMTS',
   title: 'Tile Service XYZ',
   identifier: 'service-123',
   abstract: '© OSM data',
@@ -14,7 +14,7 @@ wmts.getCapabilities({
 })
 `)
 const xml = wmts.getCapabilities({
-  uri: 'http://localhost:5000/WMTS',
+  url: 'http://localhost:5000/WMTS',
   title: 'Tile Service XYZ',
   identifier: 'service-123',
   abstract: '© OSM data',

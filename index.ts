@@ -58,11 +58,15 @@ const BBOX: BBox = [-180, -85, 180, 85]
  * @returns {string} XML string
  * @example
  * const xml = wmts.getCapabilities({
- *   uri: 'http://localhost:5000/WMTS',
- *   title: 'service_name',
+ *   url: 'http://localhost:5000/WMTS',
+ *   title: 'Tile Service XYZ',
+ *   identifier: 'service-123',
+ *   abstract: '© OSM data',
+ *   keyword: ['world', 'imagery', 'wmts'],
  *   format: 'png',
  *   minzoom: 10,
- *   maxzoom: 18
+ *   maxzoom: 18,
+ *   bbox: [-180, -85, 180, 85]
  * })
  */
 export function getCapabilities(options: Options): string {

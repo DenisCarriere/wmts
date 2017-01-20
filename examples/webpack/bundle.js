@@ -48,7 +48,7 @@
 
 	console.log(`
 	wmts.getCapabilities({
-	  uri: 'http://localhost:5000/WMTS',
+	  url: 'http://localhost:5000/WMTS',
 	  title: 'Tile Service XYZ',
 	  identifier: 'service-123',
 	  abstract: '© OSM data',
@@ -60,7 +60,7 @@
 	})
 	`)
 	const xml = wmts.getCapabilities({
-	  uri: 'http://localhost:5000/WMTS',
+	  url: 'http://localhost:5000/WMTS',
 	  title: 'Tile Service XYZ',
 	  identifier: 'service-123',
 	  abstract: '© OSM data',
@@ -80,9 +80,7 @@
 	const convert = __webpack_require__(2);
 	const mercator = __webpack_require__(37);
 	const utils_1 = __webpack_require__(38);
-	/**
-	 * Default Values
-	 */
+	// Default Values
 	const MINZOOM = 0;
 	const MAXZOOM = 20;
 	const SPACES = 2;
@@ -90,15 +88,20 @@
 	/**
 	 * Get Capabilities
 	 *
+	 * @param {Options} options Options
 	 * @param {number} [options.spaces=2] Spaces created for XML output
 	 * @returns {string} XML string
 	 * @example
 	 * const xml = wmts.getCapabilities({
-	 *   uri: 'http://localhost:5000/WMTS',
-	 *   title: 'service_name',
+	 *   url: 'http://localhost:5000/WMTS',
+	 *   title: 'Tile Service XYZ',
+	 *   identifier: 'service-123',
+	 *   abstract: '© OSM data',
+	 *   keyword: ['world', 'imagery', 'wmts'],
 	 *   format: 'png',
 	 *   minzoom: 10,
-	 *   maxzoom: 18
+	 *   maxzoom: 18,
+	 *   bbox: [-180, -85, 180, 85]
 	 * })
 	 */
 	function getCapabilities(options) {
@@ -118,6 +121,7 @@
 	/**
 	 * Capabilities JSON scheme
 	 *
+	 * @param {Options} options Options
 	 * @param {string} options.url <required>
 	 * @returns {ElementCompact} JSON scheme
 	 * @example
@@ -200,6 +204,7 @@
 	/**
 	 * ServiceIdentification JSON scheme
 	 *
+	 * @param {Options} options Options
 	 * @param {string} options.title [required] Title
 	 * @param {string} options.abstract Abstract
 	 * @param {string[]} options.keywords Keywords
@@ -317,6 +322,7 @@
 	/**
 	 * Capabilities.Contents JSON scheme
 	 *
+	 * @param {Options} options Options
 	 * @param {string} title Title of Service
 	 * @param {string} uri URI of Service Provider
 	 * @returns {Element}
@@ -338,6 +344,7 @@
 	/**
 	 * Capabilities.Contents.Layer JSON scheme
 	 *
+	 * @param {Options} options Options
 	 * @param {string} options.title [required] Title
 	 * @param {string} options.url [required] URL
 	 * @param {string} options.format [required] Format 'png' | 'jpeg' | 'jpg'

@@ -6,7 +6,8 @@ npm-debug.log*
 *.js
 *.js.map
 yarn.lock
-
+!main.js
+!bundle.js
 providers.json
 
 # Runtime data

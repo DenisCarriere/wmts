@@ -55,6 +55,7 @@ const BBOX: BBox = [-180, -85, 180, 85]
 /**
  * Get Capabilities
  *
+ * @param {Options} options Options
  * @param {number} [options.spaces=2] Spaces created for XML output
  * @returns {string} XML string
  * @example
@@ -85,6 +86,7 @@ export function getCapabilities(options: Options): string {
 /**
  * Capabilities JSON scheme
  *
+ * @param {Options} options Options
  * @param {string} options.url <required>
  * @returns {ElementCompact} JSON scheme
  * @example
@@ -170,6 +172,7 @@ export function TileMatrix(minzoom: number, maxzoom: number) {
 /**
  * ServiceIdentification JSON scheme
  *
+ * @param {Options} options Options
  * @param {string} options.title [required] Title
  * @param {string} options.abstract Abstract
  * @param {string[]} options.keywords Keywords
@@ -287,6 +290,7 @@ export function Get(uri: string, value: 'RESTful' | 'KVP') {
 /**
  * Capabilities.Contents JSON scheme
  *
+ * @param {Options} options Options
  * @param {string} title Title of Service
  * @param {string} uri URI of Service Provider
  * @returns {Element}
@@ -308,6 +312,7 @@ export function Contents(options: Options) {
 /**
  * Capabilities.Contents.Layer JSON scheme
  *
+ * @param {Options} options Options
  * @param {string} options.title [required] Title
  * @param {string} options.url [required] URL
  * @param {string} options.format [required] Format 'png' | 'jpeg' | 'jpg'

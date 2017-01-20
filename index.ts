@@ -44,9 +44,7 @@ interface ServiceIdentificationOptions {
   fees?: string
 }
 
-/**
- * Default Values
- */
+// Default Values
 const MINZOOM = 0
 const MAXZOOM = 20
 const SPACES = 2

@@ -7,9 +7,7 @@
   "scripts": {
     "test": "npm run lint && jest --coverage",
     "docs": "tsc && documentation readme index.js -c documentation.yml --section=API --shallow",
-    "lint": "tsc && tslint *.ts && documentation lint index.js",
-    "browserify": "browserify ./examples/main.js -o ./examples/browserify/bundle.js",
-    "webpack": "webpack --entry ./examples/main.js --output-path ./examples/webpack --output-filename bundle.js"
+    "lint": "tsc && tslint *.ts && documentation lint index.js"
   },
   "repository": {
     "type": "git",
@@ -34,13 +32,11 @@
   "devDependencies": {
     "@types/jest": "^16.0.4",
     "@types/node": "^6.0.46",
-    "browserify": "^13.3.0",
     "coveralls": "^2.11.14",
     "documentation": "^4.0.0-beta.18",
     "jest-cli": "^18.1.0",
     "tslint": "^3.15.1",
-    "typescript": "^2.1.5",
-    "webpack": "^1.14.0"
+    "typescript": "^2.1.5"
   },
   "keywords": [
     "gis",
@@ -57,5 +53,8 @@
     "verbose": true,
     "collectCoverage": true
   },
-  "testEnvironment": "node"
+  "testEnvironment": "node",
+  "standard": {
+    "env": "jest"
+  }
 }

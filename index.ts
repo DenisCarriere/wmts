@@ -57,6 +57,8 @@ const BBOX: BBox = [-180, -85, 180, 85]
  * @param {number} [options.spaces=2] Spaces created for XML output
  * @returns {string} XML string
  * @example
+ * const wmts = require('wmts')
+ *
  * const xml = wmts.getCapabilities({
  *   url: 'http://localhost:5000/WMTS',
  *   title: 'Tile Service XYZ',
@@ -68,6 +70,7 @@ const BBOX: BBox = [-180, -85, 180, 85]
  *   maxzoom: 18,
  *   bbox: [-180, -85, 180, 85]
  * })
+ * //=xml
  */
 export function getCapabilities(options: Options): string {
   // Define Options

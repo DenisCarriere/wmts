@@ -12,6 +12,17 @@ const BBOX = [-180, -85, 180, 85]
  * Get Capabilities
  *
  * @param {Options} options Options
+ * @param {string} options.url URL of WMTS service
+ * @param {string} options.title Title of service
+ * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
+ * @param {string} [options.accessConstraints] Access Constraints
+ * @param {string} [options.fees] Fees
+ * @param {string} [options.abstract] Abstract
+ * @param {string} [options.identifier] Identifier
+ * @param {string[]} [options.keywords] Keywords
+ * @param {BBox} [options.bbox=[-180, -85, 180, 85]] BBox [west, south, east, north]
  * @param {number} [options.spaces=2] Spaces created for XML output
  * @returns {string} XML string
  * @example
@@ -48,7 +59,7 @@ module.exports.getCapabilities = getCapabilities
  * Capabilities JSON scheme
  *
  * @param {Options} options Options
- * @param {string} options.url <required>
+ * @param {string} options.url URL of WMTS service
  * @returns {ElementCompact} JSON scheme
  * @example
  * Capabilities({
@@ -84,8 +95,8 @@ module.exports.Capabilities = Capabilities
 /**
  * GoogleMapsCompatible JSON scheme
  *
- * @param {number} minzoom Minimum zoom level
- * @param {number} maxzoom Maximum zoom level
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
  * @returns {ElementCompact} JSON scheme
  * @example
  * wmts.GoogleMapsCompatible(10, 17)
@@ -107,8 +118,8 @@ module.exports.GoogleMapsCompatible = GoogleMapsCompatible
 /**
  * TileMatrix JSON scheme
  *
- * @param {number} minzoom Minimum zoom level
- * @param {number} maxzoom Maximum zoom level
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
  * @returns {ElementCompact} JSON scheme
  * @example
  * wmts.TileMatrix(0, 18)
@@ -135,11 +146,11 @@ module.exports.TileMatrix = TileMatrix
  * ServiceIdentification JSON scheme
  *
  * @param {Options} options Options
- * @param {string} options.title [required] Title
- * @param {string} options.abstract Abstract
- * @param {string[]} options.keywords Keywords
- * @param {string} options.accessConstraints Access Constraints
- * @param {string} options.fees Fees
+ * @param {string} options.title Title of service
+ * @param {string} [options.abstract] Abstract
+ * @param {string[]} [options.keywords] Keywords
+ * @param {string} [options.accessConstraints] Access Constraints
+ * @param {string} [options.fees] Fees
  * @returns {ElementCompact} JSON scheme
  * @example
  * ServiceIdentification({
@@ -175,7 +186,7 @@ module.exports.ServiceIdentification = ServiceIdentification
 /**
  * Keywords JSON scheme
  *
- * @param {string[]} keywords
+ * @param {string[]} [keywords]
  * @returns {ElementCompact} JSON scheme
  * @example
  * Keywords(['world', 'imagery', 'wmts'])
@@ -258,8 +269,6 @@ module.exports.Get = Get
  * Capabilities.Contents JSON scheme
  *
  * @param {Options} options Options
- * @param {string} title Title of Service
- * @param {string} uri URI of Service Provider
  * @returns {Element}
  * @example
  * Contents()
@@ -279,12 +288,12 @@ module.exports.Contents = Contents
  * Capabilities.Contents.Layer JSON scheme
  *
  * @param {Options} options Options
- * @param {string} options.title [required] Title
- * @param {string} options.url [required] URL
- * @param {string} options.format [required] Format 'png' | 'jpeg' | 'jpg'
- * @param {string} options.abstract Abstract
- * @param {string} options.identifier Identifier
- * @param {BBox} options.bbox BBox [west, south, east, north]
+ * @param {string} options.title Title
+ * @param {string} options.url URL
+ * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
+ * @param {string} [options.abstract] Abstract
+ * @param {string} [options.identifier] Identifier
+ * @param {BBox} [options.bbox=[-180, -85, 180, 85]] BBox [west, south, east, north]
  * @returns {ElementCompact} JSON scheme
  * @example
  * Layer({

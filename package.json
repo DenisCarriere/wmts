@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/DenisCarriere/wmts#readme",
   "dependencies": {
+    "chalk": "^1.1.3",
     "global-mercator": "^1.6.2",
     "xml-js": "^0.9.7"
   },

@@ -1,10 +1,14 @@
 # Changelog
 
+## 1.2.0 - 2017-01-24
+
+- Convert module into pure Javascript
+
 ## 1.1.0 - 2017-01-18
 
 - Major refactoring
 - Convert `xml-js` Element to Compact
-- Testing, replaced Ava with Jest 
+- Testing, replaced Ava with Jest
 
 ## 1.0.1 - 2016-11-01
 

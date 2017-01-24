@@ -1,54 +1,12 @@
-import * as convert from 'xml-js'
-import * as mercator from 'global-mercator'
-import { range, clean, error, normalize } from './utils'
-
-/**
- * BBox [west, south, east, north]
- */
-export type BBox = [number, number, number, number]
-
-/**
- * Format
- */
-export type Format = 'png' | 'jpeg' | 'jpg'
-
-/**
- * Options
- */
-interface Options extends ServiceIdentificationOptions, LayerOptions {
-  spaces?: number
-  minzoom?: number
-  maxzoom?: number
-}
-
-/**
- * Layer Options
- */
-interface LayerOptions {
-  title: string
-  url: string
-  format: Format
-  abstract?: string
-  identifier?: string
-  bbox?: BBox
-}
-
-/**
- * ServiceIdentification Options
- */
-interface ServiceIdentificationOptions {
-  title: string
-  abstract?: string
-  keywords?: string[]
-  accessConstraints?: string
-  fees?: string
-}
+const convert = require('xml-js')
+const mercator = require('global-mercator')
+const chalk = require('chalk')
 
 // Default Values
 const MINZOOM = 0
 const MAXZOOM = 20
 const SPACES = 2
-const BBOX: BBox = [-180, -85, 180, 85]
+const BBOX = [-180, -85, 180, 85]
 
 /**
  * Get Capabilities
@@ -57,8 +15,6 @@ const BBOX: BBox = [-180, -85, 180, 85]
  * @param {number} [options.spaces=2] Spaces created for XML output
  * @returns {string} XML string
  * @example
- * const wmts = require('wmts')
- *
  * const xml = wmts.getCapabilities({
  *   url: 'http://localhost:5000/WMTS',
  *   title: 'Tile Service XYZ',
@@ -70,23 +26,23 @@ const BBOX: BBox = [-180, -85, 180, 85]
  *   maxzoom: 18,
  *   bbox: [-180, -85, 180, 85]
  * })
- * //=xml
  */
-export function getCapabilities(options: Options): string {
+function getCapabilities (options = {}) {
   // Define Options
   const spaces = options.spaces || SPACES
 
   // XML header
-  const declaration = { _attributes: { version: '1.0', encoding: 'utf-8' }}
+  const declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
 
   // Define JSON
   const json = {
     declaration,
-    Capabilities: Capabilities(options).Capabilities,
+    Capabilities: Capabilities(options).Capabilities
   }
   const xml = convert.js2xml(json, { compact: true, spaces })
   return xml
 }
+module.exports.getCapabilities = getCapabilities
 
 /**
  * Capabilities JSON scheme
@@ -99,7 +55,7 @@ export function getCapabilities(options: Options): string {
  *   url: 'http://localhost:5000'
  * })
  */
-export function Capabilities(options: Options) {
+function Capabilities (options = {}) {
   // Required options
   const url = normalize(options.url)
   if (!url) { error('<url> is required') }
@@ -113,16 +69,17 @@ export function Capabilities(options: Options) {
         'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
         'xmlns:gml': 'http://www.opengis.net/gml',
         'xsi:schemaLocation': 'http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd',
-        version: '1.0.0',
+        version: '1.0.0'
       },
-      ServiceMetadataURL: { _attributes: { 'xlink:href':  url + '/1.0.0/WMTSCapabilities.xml' }},
+      ServiceMetadataURL: {_attributes: { 'xlink:href': url + '/1.0.0/WMTSCapabilities.xml' }}
     },
       ServiceIdentification(options),
       OperationsMetadata(url),
       Contents(options)
-    ),
+    )
   }
 }
+module.exports.Capabilities = Capabilities
 
 /**
  * GoogleMapsCompatible JSON scheme
@@ -133,7 +90,7 @@ export function Capabilities(options: Options) {
  * @example
  * wmts.GoogleMapsCompatible(10, 17)
  */
-export function GoogleMapsCompatible(minzoom: number, maxzoom: number) {
+function GoogleMapsCompatible (minzoom = MINZOOM, maxzoom = MAXZOOM) {
   return {
     TileMatrixSet: {
       'ows:Title': {_text: 'GoogleMapsCompatible'},
@@ -141,10 +98,11 @@ export function GoogleMapsCompatible(minzoom: number, maxzoom: number) {
       'ows:Identifier': {_text: 'GoogleMapsCompatible'},
       'ows:SupportedCRS': {_text: 'urn:ogc:def:crs:EPSG:6.18.3:3857'},
       WellKnownScaleSet: {_text: 'urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible'},
-      TileMatrix: TileMatrix(minzoom, maxzoom).TileMatrix,
-    },
+      TileMatrix: TileMatrix(minzoom, maxzoom).TileMatrix
+    }
   }
 }
+module.exports.GoogleMapsCompatible = GoogleMapsCompatible
 
 /**
  * TileMatrix JSON scheme
@@ -155,7 +113,7 @@ export function GoogleMapsCompatible(minzoom: number, maxzoom: number) {
  * @example
  * wmts.TileMatrix(0, 18)
  */
-export function TileMatrix(minzoom: number, maxzoom: number) {
+function TileMatrix (minzoom = MINZOOM, maxzoom = MAXZOOM) {
   const TileMatrix = range(minzoom, maxzoom + 1).map(zoom => {
     const matrix = Math.pow(2, zoom)
     const ScaleDenominator = 559082264.0287178 / matrix
@@ -166,13 +124,12 @@ export function TileMatrix(minzoom: number, maxzoom: number) {
       TileWidth: {_text: '256'},
       TileHeight: {_text: '256'},
       MatrixWidth: {_text: String(matrix)},
-      MatrixHeight: {_text: String(matrix)},
+      MatrixHeight: {_text: String(matrix)}
     }
   })
-  return {
-    TileMatrix,
-  }
+  return {TileMatrix}
 }
+module.exports.TileMatrix = TileMatrix
 
 /**
  * ServiceIdentification JSON scheme
@@ -191,7 +148,7 @@ export function TileMatrix(minzoom: number, maxzoom: number) {
  *   keywords: ['world', 'wmts', 'imagery']
  * })
  */
-export function ServiceIdentification(options: ServiceIdentificationOptions) {
+function ServiceIdentification (options = {}) {
   // Required options
   const title = options.title || error('<title> required')
 
@@ -209,10 +166,11 @@ export function ServiceIdentification(options: ServiceIdentificationOptions) {
       'ows:Abstract': abstract ? {_text: abstract} : undefined,
       'ows:AccessConstraints': accessConstraints ? {_text: accessConstraints} : undefined,
       'ows:Fees': fees ? {_text: fees} : undefined,
-      'ows:Keywords': Keywords(keywords)['ows:Keywords'],
-    },
+      'ows:Keywords': Keywords(keywords)['ows:Keywords']
+    }
   })
 }
+module.exports.ServiceIdentification = ServiceIdentification
 
 /**
  * Keywords JSON scheme
@@ -222,13 +180,14 @@ export function ServiceIdentification(options: ServiceIdentificationOptions) {
  * @example
  * Keywords(['world', 'imagery', 'wmts'])
  */
-export function Keywords(keywords: string[] = []) {
+function Keywords (keywords = []) {
   return {
     'ows:Keywords': {
-      'ows:Keyword': keywords.map(keyword => { return {_text : String(keyword)} }),
-    },
+      'ows:Keyword': keywords.map(keyword => { return {_text: String(keyword)} })
+    }
   }
 }
+module.exports.Keywords = Keywords
 
 /**
  * OperationsMetadata JSON scheme
@@ -238,59 +197,62 @@ export function Keywords(keywords: string[] = []) {
  * @example
  * OperationsMetadata('http://localhost:5000/wmts')
  */
-export function OperationsMetadata(url: string) {
+function OperationsMetadata (url) {
   url = normalize(url)
   if (!url) { error('<url> is required') }
   return {
     'ows:OperationsMetadata': {
       'ows:Operation': [
         Operation('GetCapabilities', url + '/1.0.0/WMTSCapabilities.xml', url + '?')['ows:Operation'],
-        Operation('GetTile', url + '/tile/1.0.0/', url + '?')['ows:Operation'],
-      ],
-    },
+        Operation('GetTile', url + '/tile/1.0.0/', url + '?')['ows:Operation']
+      ]
+    }
   }
 }
+module.exports.OperationsMetadata = OperationsMetadata
 
 /**
  * Operation JSON scheme
  *
- * @param {string} uri URI of Service Provider
+ * @param {string} operation Name of operation
+ * @param {string} restful URL for RESTful
+ * @param {string} kvp URL for KVP
  * @returns {ElementCompact} JSON scheme
- * @example
- * Operation()
  */
-export function Operation(operation: string, restful: string, kvp: string) {
+function Operation (operation, restful, kvp) {
   return {
     'ows:Operation': {_attributes: {name: operation},
       'ows:DCP': {
         'ows:HTTP': {
-          'ows:Get': [Get(restful, 'RESTful')['ows:Get'], Get(kvp, 'KVP')['ows:Get']],
-        },
-      },
-    },
+          'ows:Get': [Get(restful, 'RESTful')['ows:Get'], Get(kvp, 'KVP')['ows:Get']]
+        }
+      }
+    }
   }
 }
+module.exports.Operation = Operation
 
 /**
  * Get JSON scheme
  *
- * @param {string} uri URI of Service Provider
- * @param {string} value Type of Get
+ * @param {string} url URL of Service Provider
+ * @param {string} value Type of Get 'RESTful' | 'KVP'
  * @returns {ElementCompact} JSON scheme
  * @example
  * Get()
  * //= Get > Constraint > AllowedValues> Value
  */
-export function Get(uri: string, value: 'RESTful' | 'KVP') {
+function Get (url, value) {
   return {
-    'ows:Get': {_attributes: {'xlink:href': uri},
-      'ows:Constraint': { _attributes: {name: 'GetEncoding'}},
+    'ows:Get': {_attributes: {'xlink:href': url},
+      'ows:Constraint': {_attributes: {name: 'GetEncoding'}},
       'ows:AllowedValues': {
-        'ows:Value': {_text: value},
-      },
-    },
+        'ows:Value': {_text: value}
+      }
+    }
   }
 }
+module.exports.Get = Get
 
 /**
  * Capabilities.Contents JSON scheme
@@ -303,16 +265,15 @@ export function Get(uri: string, value: 'RESTful' | 'KVP') {
  * Contents()
  * //= Contents > [Layer, TileMatrixSet, TileMatrixSet]
  */
-export function Contents(options: Options) {
-  const minzoom = options.minzoom || MINZOOM
-  const maxzoom = options.maxzoom || MAXZOOM
+function Contents (options = {}) {
   return {
     Contents: {
       Layer: Layer(options).Layer,
-      TileMatrixSet: GoogleMapsCompatible(minzoom, maxzoom).TileMatrixSet,
-    },
+      TileMatrixSet: GoogleMapsCompatible(options.minzoom, options.maxzoom).TileMatrixSet
+    }
   }
 }
+module.exports.Contents = Contents
 
 /**
  * Capabilities.Contents.Layer JSON scheme
@@ -332,7 +293,7 @@ export function Contents(options: Options) {
  *   format: 'jpg'
  * })
  */
-export function Layer(options: LayerOptions) {
+function Layer (options = {}) {
   // Required options
   const title = options.title || error('<title> is required')
   const url = options.url || error('<url> is required')
@@ -341,12 +302,12 @@ export function Layer(options: LayerOptions) {
   // Optional options
   const abstract = options.abstract
   const identifier = options.identifier
-  const bbox: BBox = options.bbox || BBOX
+  const bbox = options.bbox || BBOX
 
   // Derived Variables
   const contentType = `image/${(format === 'jpg') ? 'jpeg' : format}`
-  const southwest: [number, number] = [bbox[0], bbox[1]]
-  const northeast: [number, number] = [bbox[2], bbox[3]]
+  const southwest = bbox.slice(0, 2)
+  const northeast = bbox.slice(2, 4)
   const template = url + `/tile/1.0.0/${identifier}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.` + options.format
 
   return clean({
@@ -356,21 +317,85 @@ export function Layer(options: LayerOptions) {
       'ows:Abstract': abstract ? { _text: abstract } : undefined,
       'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
         'ows:LowerCorner': { _text: mercator.lngLatToMeters(southwest).join(',') },
-        'ows:UpperCorner': { _text: mercator.lngLatToMeters(northeast).join(',') },
+        'ows:UpperCorner': { _text: mercator.lngLatToMeters(northeast).join(',') }
       },
       'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
         'ows:LowerCorner': { _text: southwest.join(',') },
-        'ows:UpperCorner': { _text: northeast.join(',') },
+        'ows:UpperCorner': { _text: northeast.join(',') }
       },
       Style: { _attributes: { isDefault: 'true' },
         'ows:Title': { _text: 'Default Style' },
-        'ows:Identifier': { _text: 'default' },
+        'ows:Identifier': { _text: 'default' }
       },
       Format: { _text: contentType },
       TileMatrixSetLink: {
-        TileMatrixSet: { _text: 'GoogleMapsCompatible' },
+        TileMatrixSet: { _text: 'GoogleMapsCompatible' }
       },
-      ResourceURL: { _attributes: { format: contentType, resourceType: 'tile', template }},
-    },
+      ResourceURL: {_attributes: { format: contentType, resourceType: 'tile', template }}
+    }
   })
+}
+module.exports.Layer = Layer
+
+/**
+ * Generate an integer Array containing an arithmetic progression.
+ *
+ * @private
+ * @param {number} [start=0] Start
+ * @param {number} stop Stop
+ * @param {number} [step=1] Step
+ * @returns {Array<number>} range
+ * @example
+ * range(3)
+ * //=[ 0, 1, 2 ]
+ * range(3, 6)
+ * //=[ 3, 4, 5 ]
+ * range(6, 3, -1)
+ * //=[ 6, 5, 4 ]
+ */
+function range (start, stop, step) {
+  if (stop === undefined) {
+    stop = start || 0
+    start = 0
+  }
+  if (!step) {
+    step = stop < start ? -1 : 1
+  }
+
+  const length = Math.max(Math.ceil((stop - start) / step), 0)
+  const range = Array(length)
+
+  for (let idx = 0; idx < length; idx++, start += step) {
+    range[idx] = start
+  }
+  return range
+}
+module.exports.range = range
+
+/**
+ * Clean remove undefined attributes from object
+ *
+ * @param {Object} obj
+ */
+function clean (obj) {
+  return JSON.parse(JSON.stringify(obj))
+}
+module.exports.clean = clean
+
+/**
+ * Normalize URL
+ *
+ * @param {string} url
+ * @returns {string} Normalized URL
+ */
+function normalize (url) {
+  return url && url.replace(/$\//, '')
+}
+
+/**
+ * Pretty Error message
+ */
+function error (...message) {
+  console.log(chalk.bgRed.white('[Error] ' + message.join(' ')))
+  throw new Error(message.join(' '))
 }

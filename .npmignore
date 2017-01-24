@@ -1,9 +1,4 @@
-coverage
+fixtures/
 yarn.lock
-*.json
-CHANGELOG.md
-.*
-examples
-fixtures
-*test*
-*.yml
+coverage/
+.vscode/

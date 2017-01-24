@@ -1,6 +1,5 @@
 const convert = require('xml-js')
 const mercator = require('global-mercator')
-const chalk = require('chalk')
 
 // Default Values
 const MINZOOM = 0
@@ -405,6 +404,6 @@ function normalize (url) {
  * Pretty Error message
  */
 function error (...message) {
-  console.log(chalk.bgRed.white('[Error] ' + message.join(' ')))
+  console.log('[Error] ' + message.join(' '))
   throw new Error(message.join(' '))
 }

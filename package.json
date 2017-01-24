@@ -1,6 +1,6 @@
 {
   "name": "wmts",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Flexible WMTS scheme for Javascript applications",
   "main": "index.js",
   "jsnext:main": "index.js",

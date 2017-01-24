@@ -4,11 +4,16 @@
   "description": "Flexible WMTS scheme for Javascript applications",
   "main": "index.js",
   "jsnext:main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "npm run lint && jest --coverage",
     "lint": "standard",
     "docs": "documentation readme index.js --section=Usage"
   },
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DenisCarriere/wmts.git"

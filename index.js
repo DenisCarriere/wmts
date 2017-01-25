@@ -334,9 +334,11 @@ function Layer (options = {}) {
   const northeast = bbox.slice(2, 4)
   const template = url + `/tile/1.0.0/${identifier}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.` + options.format
 
-  const layer = {
+  return clean({
     Layer: {
       'ows:Title': { _text: title },
+      'ows:Identifier': identifier ? { _text: identifier } : undefined,
+      'ows:Abstract': abstract ? { _text: abstract } : undefined,
       'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
         'ows:LowerCorner': { _text: mercator.lngLatToMeters(southwest).join(',') },
         'ows:UpperCorner': { _text: mercator.lngLatToMeters(northeast).join(',') }
@@ -355,10 +357,7 @@ function Layer (options = {}) {
       },
       ResourceURL: {_attributes: { format: contentType, resourceType: 'tile', template }}
     }
-  }
-  if (identifier) { layer['ows:Identifier'] = { _text: identifier } }
-  if (abstract) { layer['ows:Abstract'] = { _text: abstract } }
-  return layer
+  })
 }
 module.exports.Layer = Layer
 

@@ -15,8 +15,8 @@ const BBOX = [-180, -85, 180, 85]
  * @param {string} options.url URL of WMTS service
  * @param {string} options.title Title of service
  * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
- * @param {number} [minzoom=0] Minimum zoom level
- * @param {number} [maxzoom=22] Maximum zoom level
+ * @param {number} [options.minzoom=0] Minimum zoom level
+ * @param {number} [options.maxzoom=22] Maximum zoom level
  * @param {string} [options.accessConstraints] Access Constraints
  * @param {string} [options.fees] Fees
  * @param {string} [options.abstract] Abstract
@@ -58,6 +58,7 @@ module.exports.getCapabilities = getCapabilities
 /**
  * Capabilities JSON scheme
  *
+ * @private
  * @param {Options} options Options
  * @param {string} options.url URL of WMTS service
  * @returns {ElementCompact} JSON scheme
@@ -95,6 +96,7 @@ module.exports.Capabilities = Capabilities
 /**
  * GoogleMapsCompatible JSON scheme
  *
+ * @private
  * @param {number} [minzoom=0] Minimum zoom level
  * @param {number} [maxzoom=22] Maximum zoom level
  * @returns {ElementCompact} JSON scheme
@@ -118,6 +120,7 @@ module.exports.GoogleMapsCompatible = GoogleMapsCompatible
 /**
  * TileMatrix JSON scheme
  *
+ * @private
  * @param {number} [minzoom=0] Minimum zoom level
  * @param {number} [maxzoom=22] Maximum zoom level
  * @returns {ElementCompact} JSON scheme
@@ -145,6 +148,7 @@ module.exports.TileMatrix = TileMatrix
 /**
  * ServiceIdentification JSON scheme
  *
+ * @private
  * @param {Options} options Options
  * @param {string} options.title Title of service
  * @param {string} [options.abstract] Abstract
@@ -186,6 +190,7 @@ module.exports.ServiceIdentification = ServiceIdentification
 /**
  * Keywords JSON scheme
  *
+ * @private
  * @param {string[]} [keywords]
  * @returns {ElementCompact} JSON scheme
  * @example
@@ -203,6 +208,7 @@ module.exports.Keywords = Keywords
 /**
  * OperationsMetadata JSON scheme
  *
+ * @private
  * @param {string} url URL of Service Provider
  * @returns {ElementCompact} JSON scheme
  * @example
@@ -225,6 +231,7 @@ module.exports.OperationsMetadata = OperationsMetadata
 /**
  * Operation JSON scheme
  *
+ * @private
  * @param {string} operation Name of operation
  * @param {string} restful URL for RESTful
  * @param {string} kvp URL for KVP
@@ -246,6 +253,7 @@ module.exports.Operation = Operation
 /**
  * Get JSON scheme
  *
+ * @private
  * @param {string} url URL of Service Provider
  * @param {string} value Type of Get 'RESTful' | 'KVP'
  * @returns {ElementCompact} JSON scheme
@@ -268,6 +276,7 @@ module.exports.Get = Get
 /**
  * Capabilities.Contents JSON scheme
  *
+ * @private
  * @param {Options} options Options
  * @returns {Element}
  * @example
@@ -287,6 +296,7 @@ module.exports.Contents = Contents
 /**
  * Capabilities.Contents.Layer JSON scheme
  *
+ * @private
  * @param {Options} options Options
  * @param {string} options.title Title
  * @param {string} options.url URL
@@ -384,6 +394,7 @@ module.exports.range = range
 /**
  * Clean remove undefined attributes from object
  *
+ * @private
  * @param {Object} obj
  */
 function clean (obj) {
@@ -394,6 +405,7 @@ module.exports.clean = clean
 /**
  * Normalize URL
  *
+ * @private
  * @param {string} url
  * @returns {string} Normalized URL
  */
@@ -403,6 +415,7 @@ function normalize (url) {
 
 /**
  * Pretty Error message
+ * @private
  */
 function error (...message) {
   console.log(chalk.bgRed.white('[Error] ' + message.join(' ')))

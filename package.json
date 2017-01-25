@@ -7,12 +7,15 @@
   "types": "index.d.ts",
   "scripts": {
     "test": "npm run lint && jest --coverage",
+    "prepublish": "browserify index.js -s wmts -o wmts.js && uglifyjs wmts.js -c -m > wmts.min.js",
     "lint": "standard",
-    "docs": "documentation readme index.js --section=Usage"
+    "docs": "documentation readme index.js --section=API"
   },
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.d.ts",
+    "wmts.js",
+    "wmts.min.js"
   ],
   "repository": {
     "type": "git",
@@ -34,11 +37,13 @@
   },
   "devDependencies": {
     "@types/jest": "^16.0.4",
+    "browserify": "^13.3.0",
     "coveralls": "^2.11.14",
     "documentation": "^4.0.0-beta.18",
     "jest-cli": "^18.1.0",
     "standard": "^8.6.0",
-    "typescript": "^2.1.5"
+    "typescript": "^2.1.5",
+    "uglify-js": "git+https://git@github.com/mishoo/UglifyJS2.git#harmony"
   },
   "keywords": [
     "gis",

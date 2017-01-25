@@ -313,10 +313,15 @@ module.exports.Contents = Contents
  * })
  */
 function Layer (options = {}) {
+  // Catch errors
+  if (options.title === undefined) { error('<title> is required') }
+  if (options.url === undefined) { error('<url> is required') }
+  if (options.format === undefined) { error('<format> is required') }
+
   // Required options
-  const title = options.title || error('<title> is required')
-  const url = options.url || error('<url> is required')
-  const format = options.format || error('<format> is required')
+  const title = options.title
+  const url = options.url
+  const format = options.format
 
   // Optional options
   const abstract = options.abstract
@@ -329,11 +334,9 @@ function Layer (options = {}) {
   const northeast = bbox.slice(2, 4)
   const template = url + `/tile/1.0.0/${identifier}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.` + options.format
 
-  return clean({
+  const layer = {
     Layer: {
       'ows:Title': { _text: title },
-      'ows:Identifier': identifier ? { _text: identifier } : undefined,
-      'ows:Abstract': abstract ? { _text: abstract } : undefined,
       'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
         'ows:LowerCorner': { _text: mercator.lngLatToMeters(southwest).join(',') },
         'ows:UpperCorner': { _text: mercator.lngLatToMeters(northeast).join(',') }
@@ -352,7 +355,10 @@ function Layer (options = {}) {
       },
       ResourceURL: {_attributes: { format: contentType, resourceType: 'tile', template }}
     }
-  })
+  }
+  if (identifier) { layer['ows:Identifier'] = { _text: identifier } }
+  if (abstract) { layer['ows:Abstract'] = { _text: abstract } }
+  return layer
 }
 module.exports.Layer = Layer
 

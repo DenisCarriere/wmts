@@ -58,7 +58,7 @@ Get Capabilities
     -   `options.abstract` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Abstract
     -   `options.identifier` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)?** Identifier
     -   `options.keywords` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)>?** Keywords
-    -   `options.bbox` **BBox?** BBox [west, south, east, north] (optional, default `[-180,-85,180,85]`)
+    -   `options.bbox` **BBox?** BBox [west, south, east, north]
     -   `options.spaces` **[number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number)?** Spaces created for XML output (optional, default `2`)
 
 **Examples**

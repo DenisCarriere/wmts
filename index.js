@@ -22,7 +22,7 @@ const BBOX = [-180, -85, 180, 85]
  * @param {string} [options.abstract] Abstract
  * @param {string} [options.identifier] Identifier
  * @param {string[]} [options.keywords] Keywords
- * @param {BBox} [options.bbox=[-180, -85, 180, 85]] BBox [west, south, east, north]
+ * @param {BBox} [options.bbox] BBox [west, south, east, north]
  * @param {number} [options.spaces=2] Spaces created for XML output
  * @returns {string} XML string
  * @example

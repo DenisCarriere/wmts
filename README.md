@@ -16,8 +16,6 @@
 $ npm install --save wtms
 ```
 
-**Download CDN** - [https://unpkg.com/wmts/wmts.min.js](https://unpkg.com/wmts/wmts.min.js)
-
 ## Quickstart
 
 ```javascript

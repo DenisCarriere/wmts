@@ -32,12 +32,10 @@
     "xml-js": "^0.9.7"
   },
   "devDependencies": {
-    "@types/jest": "^16.0.4",
     "coveralls": "^2.11.14",
     "documentation": "^4.0.0-beta.18",
     "jest-cli": "^18.1.0",
-    "standard": "^8.6.0",
-    "typescript": "^2.1.5"
+    "standard": "^8.6.0"
   },
   "keywords": [
     "gis",

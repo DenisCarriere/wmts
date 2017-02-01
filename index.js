@@ -1,6 +1,7 @@
 const convert = require('xml-js')
 const mercator = require('global-mercator')
 const chalk = require('chalk')
+const range = require('lodash.range')
 
 // Default Values
 const MINZOOM = 0
@@ -360,41 +361,6 @@ function Layer (options = {}) {
   })
 }
 module.exports.Layer = Layer
-
-/**
- * Generate an integer Array containing an arithmetic progression.
- *
- * @private
- * @param {number} [start=0] Start
- * @param {number} stop Stop
- * @param {number} [step=1] Step
- * @returns {Array<number>} range
- * @example
- * range(3)
- * //=[ 0, 1, 2 ]
- * range(3, 6)
- * //=[ 3, 4, 5 ]
- * range(6, 3, -1)
- * //=[ 6, 5, 4 ]
- */
-function range (start, stop, step) {
-  if (stop === undefined) {
-    stop = start || 0
-    start = 0
-  }
-  if (!step) {
-    step = stop < start ? -1 : 1
-  }
-
-  const length = Math.max(Math.ceil((stop - start) / step), 0)
-  const range = Array(length)
-
-  for (let idx = 0; idx < length; idx++, start += step) {
-    range[idx] = start
-  }
-  return range
-}
-module.exports.range = range
 
 /**
  * Clean remove undefined attributes from object

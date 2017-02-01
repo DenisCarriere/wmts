@@ -44,11 +44,11 @@ function getCapabilities (options = {}) {
   const spaces = options.spaces || SPACES
 
   // XML header
-  const declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
+  const _declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
 
   // Define JSON
   const json = {
-    declaration,
+    _declaration,
     Capabilities: Capabilities(options).Capabilities
   }
   const xml = convert.js2xml(json, { compact: true, spaces })

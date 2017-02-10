@@ -44,8 +44,9 @@ function compare (data, fixture) {
 describe('Capabilities', () => {
   test('GoogleMapsCompatible', () => compare(wmts.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml'))
   test('TileMatrix', () => compare(wmts.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml'))
-  test('ServiceIdentification', () => compare(wmts.ServiceIdentification({title, keywords}), 'ServiceIdentification.xml'))
-  test('Keywords', () => compare(wmts.Keywords(keywords), 'Keywords.xml'))
+  test('ServiceIdentification', () => compare(wmts.ServiceIdentification({title}), 'ServiceIdentification.xml'))
+  test('Keywords', () => compare(wmts.ServiceIdentification({title, keywords}), 'Keywords.xml'))
+  test('Contents', () => compare(wmts.Contents(options), 'Contents.xml'))
   test('OperationsMetadata', () => compare(wmts.OperationsMetadata(url), 'OperationsMetadata.xml'))
   test('Layer', () => compare(wmts.Layer(options), 'Layer.xml'))
   test('getCapabilities', () => compare(wmts.getCapabilities(options), 'WMTSCapabilities.xml'))

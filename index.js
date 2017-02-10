@@ -1,5 +1,4 @@
 const convert = require('xml-js')
-const mercator = require('global-mercator')
 const chalk = require('chalk')
 const range = require('lodash.range')
 
@@ -83,12 +82,12 @@ function Capabilities (options = {}) {
         'xmlns:gml': 'http://www.opengis.net/gml',
         'xsi:schemaLocation': 'http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd',
         version: '1.0.0'
-      },
-      ServiceMetadataURL: {_attributes: { 'xlink:href': url + '/1.0.0/WMTSCapabilities.xml' }}
+      }
     },
       ServiceIdentification(options),
       OperationsMetadata(url),
-      Contents(options)
+      Contents(options),
+      {ServiceMetadataURL: {_attributes: { 'xlink:href': url + '/1.0.0/WMTSCapabilities.xml' }}}
     )
   }
 }
@@ -182,7 +181,7 @@ function ServiceIdentification (options = {}) {
       'ows:Abstract': abstract ? {_text: abstract} : undefined,
       'ows:AccessConstraints': accessConstraints ? {_text: accessConstraints} : undefined,
       'ows:Fees': fees ? {_text: fees} : undefined,
-      'ows:Keywords': Keywords(keywords)['ows:Keywords']
+      'ows:Keywords': keywords ? Keywords(keywords)['ows:Keywords'] : undefined
     }
   })
 }
@@ -340,13 +339,9 @@ function Layer (options = {}) {
       'ows:Title': { _text: title },
       'ows:Identifier': identifier ? { _text: identifier } : undefined,
       'ows:Abstract': abstract ? { _text: abstract } : undefined,
-      'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
-        'ows:LowerCorner': { _text: mercator.lngLatToMeters(southwest).join(',') },
-        'ows:UpperCorner': { _text: mercator.lngLatToMeters(northeast).join(',') }
-      },
       'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
-        'ows:LowerCorner': { _text: southwest.join(',') },
-        'ows:UpperCorner': { _text: northeast.join(',') }
+        'ows:LowerCorner': { _text: southwest.join(' ') },
+        'ows:UpperCorner': { _text: northeast.join(' ') }
       },
       Style: { _attributes: { isDefault: 'true' },
         'ows:Title': { _text: 'Default Style' },

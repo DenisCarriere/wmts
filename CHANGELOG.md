@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0 - 2017-02-09
+
+- Fix keywords when undefined provided
+- Fix bounding box not being detected (removed comma)
+- Dropped Web mercator bounding box (not required)
+- Ordered metadata xml (ServiceMetadataURL at the bottom)
+
 ## 1.2.0 - 2017-01-24
 
 - Convert module into pure Javascript

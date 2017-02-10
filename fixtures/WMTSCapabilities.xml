@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Capabilities xmlns="http://www.opengis.net/wmts/1.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml" xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd" version="1.0.0">
-  <ServiceMetadataURL xlink:href="http://localhost:80/WMTS/1.0.0/WMTSCapabilities.xml"/>
   <ows:ServiceIdentification>
     <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
     <ows:ServiceType>OGC WMTS</ows:ServiceType>
@@ -55,13 +54,9 @@
       <ows:Title>Tile Service</ows:Title>
       <ows:Identifier>tile-service-123</ows:Identifier>
       <ows:Abstract>© OSM data</ows:Abstract>
-      <ows:BoundingBox crs="urn:ogc:def:crs:EPSG::3857">
-        <ows:LowerCorner>-20037508.3,-19971868.9</ows:LowerCorner>
-        <ows:UpperCorner>20037508.3,19971868.9</ows:UpperCorner>
-      </ows:BoundingBox>
       <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
-        <ows:LowerCorner>-180,-85</ows:LowerCorner>
-        <ows:UpperCorner>180,85</ows:UpperCorner>
+        <ows:LowerCorner>-180 -85</ows:LowerCorner>
+        <ows:UpperCorner>180 85</ows:UpperCorner>
       </ows:WGS84BoundingBox>
       <Style isDefault="true">
         <ows:Title>Default Style</ows:Title>
@@ -162,4 +157,5 @@
       </TileMatrix>
     </TileMatrixSet>
   </Contents>
+  <ServiceMetadataURL xlink:href="http://localhost:80/WMTS/1.0.0/WMTSCapabilities.xml"/>
 </Capabilities>

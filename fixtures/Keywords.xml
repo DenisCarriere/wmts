@@ -1,5 +1,10 @@
-<ows:Keywords>
-  <ows:Keyword>world</ows:Keyword>
-  <ows:Keyword>imagery</ows:Keyword>
-  <ows:Keyword>wmts</ows:Keyword>
-</ows:Keywords>
+<ows:ServiceIdentification>
+  <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+  <ows:ServiceType>OGC WMTS</ows:ServiceType>
+  <ows:Title>Tile Service</ows:Title>
+  <ows:Keywords>
+    <ows:Keyword>world</ows:Keyword>
+    <ows:Keyword>imagery</ows:Keyword>
+    <ows:Keyword>wmts</ows:Keyword>
+  </ows:Keywords>
+</ows:ServiceIdentification>

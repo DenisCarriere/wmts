@@ -168,20 +168,16 @@ function ServiceIdentification (options = {}) {
   const title = options.title || error('<title> required')
 
   // Optional options
-  const abstract = options.abstract
-  const accessConstraints = options.accessConstraints
-  const fees = options.fees
-  const keywords = options.keywords
+  // const abstract = options.abstract
+  // const accessConstraints = options.accessConstraints
+  // const fees = options.fees
+  // const keywords = options.keywords
 
   return clean({
     'ows:ServiceIdentification': {
-      'ows:ServiceTypeVersion': {_text: '1.0.0'},
+      'ows:Title': {_text: title},
       'ows:ServiceType': {_text: 'OGC WMTS'},
-      'ows:Title': title ? {_text: title} : undefined,
-      'ows:Abstract': abstract ? {_text: abstract} : undefined,
-      'ows:AccessConstraints': accessConstraints ? {_text: accessConstraints} : undefined,
-      'ows:Fees': fees ? {_text: fees} : undefined,
-      'ows:Keywords': keywords ? Keywords(keywords)['ows:Keywords'] : undefined
+      'ows:ServiceTypeVersion': {_text: '1.0.0'}
     }
   })
 }
@@ -337,7 +333,7 @@ function Layer (options = {}) {
   return clean({
     Layer: {
       'ows:Title': { _text: title },
-      'ows:Identifier': identifier ? { _text: identifier } : undefined,
+      'ows:Identifier': identifier ? { _text: identifier } : { _text: title },
       'ows:Abstract': abstract ? { _text: abstract } : undefined,
       'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
         'ows:LowerCorner': { _text: southwest.join(' ') },

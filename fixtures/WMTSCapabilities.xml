@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Capabilities xmlns="http://www.opengis.net/wmts/1.0" xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml" xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd" version="1.0.0">
   <ows:ServiceIdentification>
-    <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
-    <ows:ServiceType>OGC WMTS</ows:ServiceType>
     <ows:Title>Tile Service</ows:Title>
-    <ows:Abstract>© OSM data</ows:Abstract>
-    <ows:Keywords>
-      <ows:Keyword>world</ows:Keyword>
-      <ows:Keyword>imagery</ows:Keyword>
-      <ows:Keyword>wmts</ows:Keyword>
-    </ows:Keywords>
+    <ows:ServiceType>OGC WMTS</ows:ServiceType>
+    <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
   </ows:ServiceIdentification>
   <ows:OperationsMetadata>
     <ows:Operation name="GetCapabilities">

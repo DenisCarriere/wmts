@@ -1,5 +1,5 @@
 <ows:ServiceIdentification>
-  <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
-  <ows:ServiceType>OGC WMTS</ows:ServiceType>
   <ows:Title>Tile Service</ows:Title>
+  <ows:ServiceType>OGC WMTS</ows:ServiceType>
+  <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
 </ows:ServiceIdentification>

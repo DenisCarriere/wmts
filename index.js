@@ -321,7 +321,7 @@ function Layer (options = {}) {
 
   // Optional options
   const abstract = options.abstract
-  const identifier = options.identifier
+  const identifier = options.identifier || title
   const bbox = options.bbox || BBOX
 
   // Derived Variables

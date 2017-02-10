@@ -5,7 +5,6 @@ const wmts = require('.')
 
 // Variables
 const title = 'Tile Service'
-const identifier = 'tile-service-123'
 const abstract = '© OSM data'
 const minzoom = 10
 const maxzoom = 18
@@ -17,7 +16,6 @@ const spaces = 2
 const options = {
   title,
   spaces,
-  identifier,
   abstract,
   minzoom,
   maxzoom,

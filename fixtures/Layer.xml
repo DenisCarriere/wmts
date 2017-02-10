@@ -1,6 +1,6 @@
 <Layer>
   <ows:Title>Tile Service</ows:Title>
-  <ows:Identifier>tile-service-123</ows:Identifier>
+  <ows:Identifier>Tile Service</ows:Identifier>
   <ows:Abstract>© OSM data</ows:Abstract>
   <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
     <ows:LowerCorner>-180 -85</ows:LowerCorner>
@@ -14,5 +14,5 @@
   <TileMatrixSetLink>
     <TileMatrixSet>GoogleMapsCompatible</TileMatrixSet>
   </TileMatrixSetLink>
-  <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost:80/WMTS/tile/1.0.0/tile-service-123/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg"/>
+  <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost:80/WMTS/tile/1.0.0/Tile Service/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg"/>
 </Layer>

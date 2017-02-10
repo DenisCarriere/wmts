@@ -2,6 +2,7 @@
 
 ## 1.5.0 - 2017-02-09
 
+- Default `option.indentifier` as `title`
 - Fix keywords when undefined provided
 - Fix bounding box not being detected (removed comma)
 - Dropped Web mercator bounding box (not required)

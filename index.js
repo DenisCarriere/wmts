@@ -151,10 +151,6 @@ module.exports.TileMatrix = TileMatrix
  * @private
  * @param {Options} options Options
  * @param {string} options.title Title of service
- * @param {string} [options.abstract] Abstract
- * @param {string[]} [options.keywords] Keywords
- * @param {string} [options.accessConstraints] Access Constraints
- * @param {string} [options.fees] Fees
  * @returns {ElementCompact} JSON scheme
  * @example
  * ServiceIdentification({
@@ -328,7 +324,7 @@ function Layer (options = {}) {
   const contentType = `image/${(format === 'jpg') ? 'jpeg' : format}`
   const southwest = bbox.slice(0, 2)
   const northeast = bbox.slice(2, 4)
-  const template = url + `/tile/1.0.0/${identifier}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.` + options.format
+  const template = url + `/tile/1.0.0/${identifier}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}`
 
   return clean({
     Layer: {

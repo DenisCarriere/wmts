@@ -60,7 +60,7 @@
       <TileMatrixSetLink>
         <TileMatrixSet>GoogleMapsCompatible</TileMatrixSet>
       </TileMatrixSetLink>
-      <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost:80/WMTS/tile/1.0.0/Tile Service/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg"/>
+      <ResourceURL format="image/jpeg" resourceType="tile" template="http://localhost:80/WMTS/tile/1.0.0/Tile Service/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}"/>
     </Layer>
     <TileMatrixSet>
       <ows:Title>GoogleMapsCompatible</ows:Title>

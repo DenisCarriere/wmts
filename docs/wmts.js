@@ -318,7 +318,7 @@ function Layer (options) {
   // Required options
   const title = options.title
   const url = options.url
-  const format = options.format
+  const format = (options.format === 'jpg') ? 'jpeg' : options.format
 
   // Optional options
   const abstract = options.abstract
@@ -326,7 +326,7 @@ function Layer (options) {
   const bbox = options.bbox || BBOX
 
   // Derived Variables
-  const contentType = 'image/' + (format === 'jpg') ? 'jpeg' : format
+  const contentType = 'image/' + format
   const southwest = bbox.slice(0, 2)
   const northeast = bbox.slice(2, 4)
   const template = url + '/tile/1.0.0/' + identifier + '/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}'

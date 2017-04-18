@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 - 2017-04-19
+
+- Dropped Jest in favor of `tape` (minimalistic testing)
+- Refactor library to be ES5 instead of ES6
+- Dropped chalk in favor of simpel `throw new Error()`
+- Dropped `lodash.range` in favor of inline `range`
+
 ## 1.5.0 - 2017-02-09
 
 - Default `option.indentifier` as `title`

@@ -1,7 +1,8 @@
 const convert = require('xml-js')
 const path = require('path')
 const fs = require('fs')
-const wmts = require('.')
+const test = require('tape')
+const wmts = require('./')
 
 // Variables
 const title = 'Tile Service'
@@ -31,28 +32,30 @@ const options = {
  * @param {ElementCompact} json
  * @param {string} fixture
  */
-function compare (data, fixture) {
-  fixture = path.join('fixtures', fixture)
+function compare (t, data, fixture) {
+  var fullpath = path.join(__dirname, 'fixtures', fixture)
   let xml = data
   if (typeof (data) !== 'string') { xml = convert.js2xml(data, {compact: true, spaces}) }
-  if (process.env.REGEN) { fs.writeFileSync(fixture, xml, 'utf-8') }
-  expect(xml).toBe(fs.readFileSync(fixture, 'utf-8'))
+  if (process.env.REGEN) { fs.writeFileSync(fullpath, xml, 'utf-8') }
+  t.equal(xml, fs.readFileSync(fullpath, 'utf-8'), fixture)
 }
 
-describe('Capabilities', () => {
-  test('GoogleMapsCompatible', () => compare(wmts.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml'))
-  test('TileMatrix', () => compare(wmts.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml'))
-  test('ServiceIdentification', () => compare(wmts.ServiceIdentification({title}), 'ServiceIdentification.xml'))
-  test('Keywords', () => compare(wmts.ServiceIdentification({title, keywords}), 'Keywords.xml'))
-  test('Contents', () => compare(wmts.Contents(options), 'Contents.xml'))
-  test('OperationsMetadata', () => compare(wmts.OperationsMetadata(url), 'OperationsMetadata.xml'))
-  test('Layer', () => compare(wmts.Layer(options), 'Layer.xml'))
-  test('getCapabilities', () => compare(wmts.getCapabilities(options), 'WMTSCapabilities.xml'))
-  test('throw error', () => expect(() => wmts.getCapabilities('invalid')).toThrow())
+test('wmts.getCapabilities', t => {
+  compare(t, wmts.getCapabilities(options), 'WMTSCapabilities.xml')
+  compare(t, wmts.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml')
+  compare(t, wmts.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml')
+  compare(t, wmts.ServiceIdentification({title}), 'ServiceIdentification.xml')
+  compare(t, wmts.ServiceIdentification({title, keywords}), 'Keywords.xml')
+  compare(t, wmts.Contents(options), 'Contents.xml')
+  compare(t, wmts.OperationsMetadata(url), 'OperationsMetadata.xml')
+  compare(t, wmts.Layer(options), 'Layer.xml')
+  t.throws(() => wmts.getCapabilities('invalid'))
+  t.end()
 })
 
-describe('utils', () => {
-  test('clean({foo: 10, bar: undefined})', () => expect(wmts.clean({foo: 10, bar: undefined})).toEqual({foo: 10}))
-  test('clean({foo: undefined, bar: undefined})', () => expect(wmts.clean({foo: undefined, bar: undefined})).toEqual({}))
-  test('clean({foo: 0})', () => expect(wmts.clean({foo: 0})).toEqual({foo: 0}))
+test('wmts.utils', t => {
+  t.deepEqual(wmts.clean({foo: 10, bar: undefined}), {foo: 10})
+  t.deepEqual(wmts.clean({foo: undefined, bar: undefined}), {})
+  t.deepEqual(wmts.clean({foo: 0}), {foo: 0})
+  t.end()
 })

@@ -1,46 +1,28 @@
 {
   "name": "wmts",
-  "version": "1.5.3",
+  "version": "1.6.0",
   "description": "Flexible WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
     "index.js",
     "index.d.ts",
-    "wmts.js",
-    "wmts.min.js"
+    "docs"
   ],
   "scripts": {
-    "prepublish": "npm run test && npm run build",
-    "test": "npm run lint && jest --coverage",
-    "lint": "standard",
-    "docs": "documentation readme index.js --section=API",
-    "build": "browserify index.js -s wmts > wmts.js && uglifyjs wmts.js -c -m > wmts.min.js"
+    "test": "node test.js",
+    "bench": "node bench.js",
+    "lint": "standard index.js",
+    "docs": "documentation readme index.js --shallow --section=API",
+    "build": "npm run browserify && npm run uglify",
+    "browserify": "browserify index.js -s wmts > docs/wmts.js",
+    "uglify": "uglifyjs docs/wmts.js -c -m > docs/wmts.min.js"
   },
   "author": "Denis Carriere <carriere.denis@gmail.com>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/DenisCarriere/wmts/issues"
-  },
-  "homepage": "https://github.com/DenisCarriere/wmts#readme",
-  "dependencies": {
-    "chalk": "^1.1.3",
-    "lodash.range": "^3.2.0",
-    "xml-js": "^1.0.2"
-  },
-  "devDependencies": {
-    "browserify": "^14.0.0",
-    "coveralls": "^2.11.14",
-    "documentation": "^4.0.0-beta.18",
-    "jest-cli": "^18.1.0",
-    "standard": "^8.6.0",
-    "typescript": "^2.1.5",
-    "uglify-js": "git://github.com/mishoo/UglifyJS2.git#harmony"
-  },
   "keywords": [
     "gis",
     "geo",
-    "geojs",
     "geospatial",
     "geography",
     "map",
@@ -48,12 +30,14 @@
     "ogc",
     "scheme"
   ],
-  "jest": {
-    "verbose": true,
-    "collectCoverage": true
+  "devDependencies": {
+    "browserify": "^14.3.0",
+    "documentation": "^4.0.0-beta.19",
+    "standard": "^8.6.0",
+    "tape": "^4.6.3",
+    "uglifyjs": "^2.4.10"
   },
-  "testEnvironment": "node",
-  "standard": {
-    "env": "jest"
+  "dependencies": {
+    "xml-js": "^1.0.2"
   }
 }

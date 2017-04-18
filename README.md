@@ -15,13 +15,13 @@
 **npm**
 
 ```bash
-$ npm install --save wmts
+$ yarn add wmts
 ```
 
 **web browser ([ES5](https://kangax.github.io/compat-table/es5))**
 
 ```html
-<script src="https://unpkg.com/wmts/wmts.min.js"></script>
+<script src="https://unpkg.com/wmts/docs/wmts.min.js"></script>
 ```
 
 ## Quickstart
@@ -86,7 +86,3 @@ const xml = wmts.getCapabilities({
 ```
 
 Returns **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** XML string
-
-## License
-
-MIT © [Denis Carriere](https://twitter.com/DenisCarriere)

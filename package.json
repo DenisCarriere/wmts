@@ -1,7 +1,7 @@
 {
   "name": "wmts",
   "version": "1.6.0",
-  "description": "Flexible WMTS scheme for Javascript applications",
+  "description": "WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
@@ -18,7 +18,7 @@
     "browserify": "browserify index.js -s wmts > docs/wmts.js",
     "uglify": "uglifyjs docs/wmts.js -c -m > docs/wmts.min.js"
   },
-  "author": "Denis Carriere <carriere.denis@gmail.com>",
+  "author": "Denis Carriere <@DenisCarriere>",
   "license": "MIT",
   "keywords": [
     "gis",

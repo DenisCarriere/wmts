@@ -2,6 +2,7 @@
 
 ## 1.7.0 - 2017-05-04
 
+- Add `parseCababilities` method to extract JSON from XML
 - Adding more testing & included coverage (100%)
 
 ## 1.6.0 - 2017-04-19

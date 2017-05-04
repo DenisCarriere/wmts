@@ -1,9 +1,13 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.wmts = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+const parseCapabilities = require('./src/parseCapabilities')
+const getCapabilities = require('./src/getCapabilities')
+
 module.exports = {
-  getCapabilities: require('./src/getCapabilities')
+  parseCapabilities: parseCapabilities,
+  getCapabilities: getCapabilities.getCapabilities
 }
 
-},{"./src/getCapabilities":37}],2:[function(require,module,exports){
+},{"./src/getCapabilities":39,"./src/parseCapabilities":40}],2:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -122,6 +126,8 @@ function fromByteArray (uint8) {
 },{}],3:[function(require,module,exports){
 
 },{}],4:[function(require,module,exports){
+arguments[4][3][0].apply(exports,arguments)
+},{"dup":3}],5:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -233,7 +239,7 @@ exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"buffer":5}],5:[function(require,module,exports){
+},{"buffer":6}],6:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -1941,7 +1947,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":2,"ieee754":8}],6:[function(require,module,exports){
+},{"base64-js":2,"ieee754":9}],7:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2052,7 +2058,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":10}],7:[function(require,module,exports){
+},{"../../is-buffer/index.js":11}],8:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2356,7 +2362,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -2442,7 +2448,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2467,7 +2473,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -2490,14 +2496,242 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
+(function (process){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// resolves . and .. elements in a path array with directory names there
+// must be no slashes, empty elements, or device names (c:\) in the array
+// (so also no leading and trailing slashes - it does not distinguish
+// relative and absolute paths)
+function normalizeArray(parts, allowAboveRoot) {
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+    var last = parts[i];
+    if (last === '.') {
+      parts.splice(i, 1);
+    } else if (last === '..') {
+      parts.splice(i, 1);
+      up++;
+    } else if (up) {
+      parts.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (allowAboveRoot) {
+    for (; up--; up) {
+      parts.unshift('..');
+    }
+  }
+
+  return parts;
+}
+
+// Split a filename into [root, dir, basename, ext], unix version
+// 'root' is just a slash, or nothing.
+var splitPathRe =
+    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+var splitPath = function(filename) {
+  return splitPathRe.exec(filename).slice(1);
+};
+
+// path.resolve([from ...], to)
+// posix version
+exports.resolve = function() {
+  var resolvedPath = '',
+      resolvedAbsolute = false;
+
+  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+    var path = (i >= 0) ? arguments[i] : process.cwd();
+
+    // Skip empty and invalid entries
+    if (typeof path !== 'string') {
+      throw new TypeError('Arguments to path.resolve must be strings');
+    } else if (!path) {
+      continue;
+    }
+
+    resolvedPath = path + '/' + resolvedPath;
+    resolvedAbsolute = path.charAt(0) === '/';
+  }
+
+  // At this point the path should be resolved to a full absolute path, but
+  // handle relative paths to be safe (might happen when process.cwd() fails)
+
+  // Normalize the path
+  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+    return !!p;
+  }), !resolvedAbsolute).join('/');
+
+  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+};
+
+// path.normalize(path)
+// posix version
+exports.normalize = function(path) {
+  var isAbsolute = exports.isAbsolute(path),
+      trailingSlash = substr(path, -1) === '/';
+
+  // Normalize the path
+  path = normalizeArray(filter(path.split('/'), function(p) {
+    return !!p;
+  }), !isAbsolute).join('/');
+
+  if (!path && !isAbsolute) {
+    path = '.';
+  }
+  if (path && trailingSlash) {
+    path += '/';
+  }
+
+  return (isAbsolute ? '/' : '') + path;
+};
+
+// posix version
+exports.isAbsolute = function(path) {
+  return path.charAt(0) === '/';
+};
+
+// posix version
+exports.join = function() {
+  var paths = Array.prototype.slice.call(arguments, 0);
+  return exports.normalize(filter(paths, function(p, index) {
+    if (typeof p !== 'string') {
+      throw new TypeError('Arguments to path.join must be strings');
+    }
+    return p;
+  }).join('/'));
+};
+
+
+// path.relative(from, to)
+// posix version
+exports.relative = function(from, to) {
+  from = exports.resolve(from).substr(1);
+  to = exports.resolve(to).substr(1);
+
+  function trim(arr) {
+    var start = 0;
+    for (; start < arr.length; start++) {
+      if (arr[start] !== '') break;
+    }
+
+    var end = arr.length - 1;
+    for (; end >= 0; end--) {
+      if (arr[end] !== '') break;
+    }
+
+    if (start > end) return [];
+    return arr.slice(start, end - start + 1);
+  }
+
+  var fromParts = trim(from.split('/'));
+  var toParts = trim(to.split('/'));
+
+  var length = Math.min(fromParts.length, toParts.length);
+  var samePartsLength = length;
+  for (var i = 0; i < length; i++) {
+    if (fromParts[i] !== toParts[i]) {
+      samePartsLength = i;
+      break;
+    }
+  }
+
+  var outputParts = [];
+  for (var i = samePartsLength; i < fromParts.length; i++) {
+    outputParts.push('..');
+  }
+
+  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+  return outputParts.join('/');
+};
+
+exports.sep = '/';
+exports.delimiter = ':';
+
+exports.dirname = function(path) {
+  var result = splitPath(path),
+      root = result[0],
+      dir = result[1];
+
+  if (!root && !dir) {
+    // No dirname whatsoever
+    return '.';
+  }
+
+  if (dir) {
+    // It has a dirname, strip trailing slash
+    dir = dir.substr(0, dir.length - 1);
+  }
+
+  return root + dir;
+};
+
+
+exports.basename = function(path, ext) {
+  var f = splitPath(path)[2];
+  // TODO: make this comparison case-insensitive on windows?
+  if (ext && f.substr(-1 * ext.length) === ext) {
+    f = f.substr(0, f.length - ext.length);
+  }
+  return f;
+};
+
+
+exports.extname = function(path) {
+  return splitPath(path)[3];
+};
+
+function filter (xs, f) {
+    if (xs.filter) return xs.filter(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        if (f(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
+}
+
+// String.prototype.substr - negative index don't work in IE8
+var substr = 'ab'.substr(-1) === 'b'
+    ? function (str, start, len) { return str.substr(start, len) }
+    : function (str, start, len) {
+        if (start < 0) start = str.length + start;
+        return str.substr(start, len);
+    }
+;
+
+}).call(this,require('_process'))
+},{"_process":15}],14:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -2544,7 +2778,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 }).call(this,require('_process'))
-},{"_process":13}],13:[function(require,module,exports){
+},{"_process":15}],15:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -2730,10 +2964,10 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports = require('./lib/_stream_duplex.js');
 
-},{"./lib/_stream_duplex.js":15}],15:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":17}],17:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -2809,7 +3043,7 @@ function forEach(xs, f) {
     f(xs[i], i);
   }
 }
-},{"./_stream_readable":17,"./_stream_writable":19,"core-util-is":6,"inherits":9,"process-nextick-args":12}],16:[function(require,module,exports){
+},{"./_stream_readable":19,"./_stream_writable":21,"core-util-is":7,"inherits":10,"process-nextick-args":14}],18:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -2836,7 +3070,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":18,"core-util-is":6,"inherits":9}],17:[function(require,module,exports){
+},{"./_stream_transform":20,"core-util-is":7,"inherits":10}],19:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3774,7 +4008,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'))
-},{"./_stream_duplex":15,"./internal/streams/BufferList":20,"./internal/streams/stream":21,"_process":13,"buffer":5,"buffer-shims":4,"core-util-is":6,"events":7,"inherits":9,"isarray":11,"process-nextick-args":12,"string_decoder/":22,"util":3}],18:[function(require,module,exports){
+},{"./_stream_duplex":17,"./internal/streams/BufferList":22,"./internal/streams/stream":23,"_process":15,"buffer":6,"buffer-shims":5,"core-util-is":7,"events":8,"inherits":10,"isarray":12,"process-nextick-args":14,"string_decoder/":24,"util":3}],20:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -3957,7 +4191,7 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
-},{"./_stream_duplex":15,"core-util-is":6,"inherits":9}],19:[function(require,module,exports){
+},{"./_stream_duplex":17,"core-util-is":7,"inherits":10}],21:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
@@ -4504,7 +4738,7 @@ function CorkedRequest(state) {
   };
 }
 }).call(this,require('_process'))
-},{"./_stream_duplex":15,"./internal/streams/stream":21,"_process":13,"buffer":5,"buffer-shims":4,"core-util-is":6,"inherits":9,"process-nextick-args":12,"util-deprecate":30}],20:[function(require,module,exports){
+},{"./_stream_duplex":17,"./internal/streams/stream":23,"_process":15,"buffer":6,"buffer-shims":5,"core-util-is":7,"inherits":10,"process-nextick-args":14,"util-deprecate":32}],22:[function(require,module,exports){
 'use strict';
 
 var Buffer = require('buffer').Buffer;
@@ -4569,10 +4803,10 @@ BufferList.prototype.concat = function (n) {
   }
   return ret;
 };
-},{"buffer":5,"buffer-shims":4}],21:[function(require,module,exports){
+},{"buffer":6,"buffer-shims":5}],23:[function(require,module,exports){
 module.exports = require('events').EventEmitter;
 
-},{"events":7}],22:[function(require,module,exports){
+},{"events":8}],24:[function(require,module,exports){
 'use strict';
 
 var Buffer = require('buffer').Buffer;
@@ -4846,10 +5080,10 @@ function simpleWrite(buf) {
 function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
-},{"buffer":5,"buffer-shims":4}],23:[function(require,module,exports){
+},{"buffer":6,"buffer-shims":5}],25:[function(require,module,exports){
 module.exports = require('./readable').PassThrough
 
-},{"./readable":24}],24:[function(require,module,exports){
+},{"./readable":26}],26:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = exports;
 exports.Readable = exports;
@@ -4858,13 +5092,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":15,"./lib/_stream_passthrough.js":16,"./lib/_stream_readable.js":17,"./lib/_stream_transform.js":18,"./lib/_stream_writable.js":19}],25:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":17,"./lib/_stream_passthrough.js":18,"./lib/_stream_readable.js":19,"./lib/_stream_transform.js":20,"./lib/_stream_writable.js":21}],27:[function(require,module,exports){
 module.exports = require('./readable').Transform
 
-},{"./readable":24}],26:[function(require,module,exports){
+},{"./readable":26}],28:[function(require,module,exports){
 module.exports = require('./lib/_stream_writable.js');
 
-},{"./lib/_stream_writable.js":19}],27:[function(require,module,exports){
+},{"./lib/_stream_writable.js":21}],29:[function(require,module,exports){
 (function (Buffer){
 ;(function (sax) { // wrapper for non-node envs
   sax.parser = function (strict, opt) { return new SAXParser(strict, opt) }
@@ -6449,7 +6683,7 @@ module.exports = require('./lib/_stream_writable.js');
 })(typeof exports === 'undefined' ? this.sax = {} : exports)
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":5,"stream":28,"string_decoder":29}],28:[function(require,module,exports){
+},{"buffer":6,"stream":30,"string_decoder":31}],30:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6578,7 +6812,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":7,"inherits":9,"readable-stream/duplex.js":14,"readable-stream/passthrough.js":23,"readable-stream/readable.js":24,"readable-stream/transform.js":25,"readable-stream/writable.js":26}],29:[function(require,module,exports){
+},{"events":8,"inherits":10,"readable-stream/duplex.js":16,"readable-stream/passthrough.js":25,"readable-stream/readable.js":26,"readable-stream/transform.js":27,"readable-stream/writable.js":28}],31:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6801,7 +7035,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":5}],30:[function(require,module,exports){
+},{"buffer":6}],32:[function(require,module,exports){
 (function (global){
 
 /**
@@ -6872,7 +7106,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 (function (process){
 /*jslint node:true */
 
@@ -6948,7 +7182,7 @@ module.exports = {
     }
 };
 }).call(this,require('_process'))
-},{"_process":13}],32:[function(require,module,exports){
+},{"_process":15}],34:[function(require,module,exports){
 /*jslint node:true */
 
 var xml2js = require('./xml2js');
@@ -6962,7 +7196,7 @@ module.exports = {
     js2xml: js2xml,
     json2xml: json2xml
 };
-},{"./js2xml":33,"./json2xml":34,"./xml2js":35,"./xml2json":36}],33:[function(require,module,exports){
+},{"./js2xml":35,"./json2xml":36,"./xml2js":37,"./xml2json":38}],35:[function(require,module,exports){
 var common = require('./common');
 
 function validateOptions (userOptions) {
@@ -7176,7 +7410,7 @@ module.exports = function (js, options) {
     return xml;
 };
 
-},{"./common":31}],34:[function(require,module,exports){
+},{"./common":33}],36:[function(require,module,exports){
 (function (Buffer){
 var js2xml = require('./js2xml.js');
 
@@ -7198,7 +7432,7 @@ module.exports = function (json, options) {
     return js2xml(js, options);
 };
 }).call(this,require("buffer").Buffer)
-},{"./js2xml.js":33,"buffer":5}],35:[function(require,module,exports){
+},{"./js2xml.js":35,"buffer":6}],37:[function(require,module,exports){
 var sax = require('sax');
 var expat /*= require('node-expat');*/ = {on: function () {}, parse: function () {}};
 var common = require('./common');
@@ -7466,7 +7700,7 @@ module.exports = function (xml, userOptions) {
 
 };
 
-},{"./common":31,"sax":27}],36:[function(require,module,exports){
+},{"./common":33,"sax":29}],38:[function(require,module,exports){
 var common = require('./common');
 var xml2js = require('./xml2js');
 
@@ -7489,7 +7723,7 @@ module.exports = function(xml, userOptions) {
     }
     return json.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 };
-},{"./common":31,"./xml2js":35}],37:[function(require,module,exports){
+},{"./common":33,"./xml2js":37}],39:[function(require,module,exports){
 const convert = require('xml-js')
 const utils = require('./utils')
 const range = utils.range
@@ -7533,10 +7767,15 @@ const BBOX = [-180, -85, 180, 85]
  * })
  */
 function getCapabilities (options) {
+  // Validation
   options = options || {}
+  if (!options.url) throw new Error('<url> is required')
+  if (!options.title) throw new Error('<title> required')
+  if (!options.format) throw new Error('<format> is required')
 
   // Define Options
   const spaces = options.spaces || SPACES
+  options.url = normalize(options.url)
 
   // XML header
   const _declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
@@ -7563,12 +7802,6 @@ function getCapabilities (options) {
  * })
  */
 function Capabilities (options) {
-  options = options || {}
-
-  // Required options
-  const url = normalize(options.url)
-  if (!url) throw new Error('<url> is required')
-
   return {
     Capabilities: Object.assign({
       _attributes: {
@@ -7582,9 +7815,9 @@ function Capabilities (options) {
       }
     },
       ServiceIdentification(options),
-      OperationsMetadata(url),
+      OperationsMetadata(options.url),
       Contents(options),
-      {ServiceMetadataURL: {_attributes: { 'xlink:href': url + '/1.0.0/WMTSCapabilities.xml' }}}
+      {ServiceMetadataURL: {_attributes: { 'xlink:href': options.url + '/1.0.0/WMTSCapabilities.xml' }}}
     )
   }
 }
@@ -7658,21 +7891,9 @@ function TileMatrix (minzoom, maxzoom) {
  * })
  */
 function ServiceIdentification (options) {
-  options = options || {}
-
-  // Required options
-  const title = options.title
-  if (!title) throw new Error('<title> required')
-
-  // Optional options
-  // const abstract = options.abstract
-  // const accessConstraints = options.accessConstraints
-  // const fees = options.fees
-  // const keywords = options.keywords
-
   return clean({
     'ows:ServiceIdentification': {
-      'ows:Title': {_text: title},
+      'ows:Title': {_text: options.title},
       'ows:ServiceType': {_text: 'OGC WMTS'},
       'ows:ServiceTypeVersion': {_text: '1.0.0'}
     }
@@ -7707,8 +7928,6 @@ function Keywords (keywords) {
  * OperationsMetadata('http://localhost:5000/wmts')
  */
 function OperationsMetadata (url) {
-  url = normalize(url)
-  if (!url) throw new Error('<url> is required')
   return {
     'ows:OperationsMetadata': {
       'ows:Operation': [
@@ -7773,8 +7992,6 @@ function Get (url, value) {
  * //= Contents > [Layer, TileMatrixSet, TileMatrixSet]
  */
 function Contents (options) {
-  options = options || {}
-
   return {
     Contents: {
       Layer: Layer(options).Layer,
@@ -7803,13 +8020,6 @@ function Contents (options) {
  * })
  */
 function Layer (options) {
-  options = options || {}
-
-  // Catch errors
-  if (options.title === undefined) throw new Error('<title> is required')
-  if (options.url === undefined) throw new Error('<url> is required')
-  if (options.format === undefined) throw new Error('<format> is required')
-
   // Required options
   const title = options.title
   const url = options.url
@@ -7829,7 +8039,7 @@ function Layer (options) {
   return clean({
     Layer: {
       'ows:Title': { _text: title },
-      'ows:Identifier': identifier ? { _text: identifier } : { _text: title },
+      'ows:Identifier': { _text: identifier },
       'ows:Abstract': abstract ? { _text: abstract } : undefined,
       'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
         'ows:LowerCorner': { _text: southwest.join(' ') },
@@ -7862,7 +8072,58 @@ module.exports = {
   Layer: Layer
 }
 
-},{"./utils":38,"xml-js":32}],38:[function(require,module,exports){
+},{"./utils":41,"xml-js":34}],40:[function(require,module,exports){
+const fs = require('fs')
+const path = require('path')
+const convert = require('xml-js')
+const utils = require('./utils')
+const clean = utils.clean
+
+/**
+ * Parse Capabilities
+ *
+ * @param {string} xml
+ * @returns {Object} WMTS Metadata
+ */
+function parseCapabilities(xml) {
+  const results = JSON.parse(convert.xml2json(xml, {compact: true}))
+
+  const Capabilities = results.Capabilities
+  const ServiceIdentification = Capabilities['ows:ServiceIdentification']
+  const OperationsMetadata = Capabilities['ows:OperationsMetadata']
+  const Contents = Capabilities.Contents
+  const ServiceMetadataURL = Capabilities.ServiceMetadataURL
+
+  // ServiceIdentification
+  const title = ServiceIdentification['ows:Title']['_text']
+  const serviceType = ServiceIdentification['ows:ServiceType']['_text']
+  const serviceTypeVersion = ServiceIdentification['ows:ServiceTypeVersion']['_text']
+
+  // Contents
+  const Layer = Contents.Layer
+  const layerTitle = (Layer['ows:Title']) ? Layer['ows:Title']['_text'] : undefined
+  const identifier = (Layer['ows:Identifier']) ? Layer['ows:Identifier']['_text'] : undefined
+  const abstract = (Layer['ows:Abstract']) ? Layer['ows:Abstract']['_text'] : undefined
+  const boundsWGS84 = Layer['ows:WGS84BoundingBox']
+
+  const ResourceURL = Layer.ResourceURL
+  const format = ResourceURL['_attributes'].format.replace(/image\//, '')
+  const resourceType = ResourceURL['_attributes'].resourceType
+  const url = ResourceURL['_attributes'].template
+
+  // console.log(JSON.stringify(Contents, null, 4))
+  return clean({
+    url: url,
+    title: title,
+    format: format,
+    abstract: abstract,
+    identifier: identifier
+  })
+}
+
+module.exports = parseCapabilities
+
+},{"./utils":41,"fs":4,"path":13,"xml-js":34}],41:[function(require,module,exports){
 /**
  * Clean remove undefined attributes from object
  *
@@ -7911,7 +8172,7 @@ function normalize (url) {
  */
 function range (start, stop, step) {
   if (stop == null) {
-    stop = start || 0
+    stop = start
     start = 0
   }
   if (!step) {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0 - 2017-05-04
+
+- Adding more testing & included coverage (100%)
+
 ## 1.6.0 - 2017-04-19
 
 - Dropped Jest in favor of `tape` (minimalistic testing)

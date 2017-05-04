@@ -1,436 +1,9 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.wmts = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-const convert = require('xml-js')
-
-// Default Values
-const MINZOOM = 0
-const MAXZOOM = 20
-const SPACES = 2
-const BBOX = [-180, -85, 180, 85]
-
-/**
- * Get Capabilities
- *
- * @param {Options} options Options
- * @param {string} options.url URL of WMTS service
- * @param {string} options.title Title of service
- * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
- * @param {number} [options.minzoom=0] Minimum zoom level
- * @param {number} [options.maxzoom=22] Maximum zoom level
- * @param {string} [options.accessConstraints] Access Constraints
- * @param {string} [options.fees] Fees
- * @param {string} [options.abstract] Abstract
- * @param {string} [options.identifier] Identifier
- * @param {string[]} [options.keywords] Keywords
- * @param {BBox} [options.bbox] BBox [west, south, east, north]
- * @param {number} [options.spaces=2] Spaces created for XML output
- * @returns {string} XML string
- * @example
- * const xml = wmts.getCapabilities({
- *   url: 'http://localhost:5000/WMTS',
- *   title: 'Tile Service XYZ',
- *   identifier: 'service-123',
- *   abstract: '© OSM data',
- *   keyword: ['world', 'imagery', 'wmts'],
- *   format: 'png',
- *   minzoom: 10,
- *   maxzoom: 18,
- *   bbox: [-180, -85, 180, 85]
- * })
- */
-function getCapabilities (options) {
-  options = options || {}
-
-  // Define Options
-  const spaces = options.spaces || SPACES
-
-  // XML header
-  const _declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
-
-  // Define JSON
-  const json = {
-    _declaration: _declaration,
-    Capabilities: Capabilities(options).Capabilities
-  }
-  const xml = convert.js2xml(json, { compact: true, spaces: spaces })
-  return xml
-}
-
-/**
- * Capabilities JSON scheme
- *
- * @private
- * @param {Options} options Options
- * @param {string} options.url URL of WMTS service
- * @returns {ElementCompact} JSON scheme
- * @example
- * Capabilities({
- *   url: 'http://localhost:5000'
- * })
- */
-function Capabilities (options) {
-  options = options || {}
-
-  // Required options
-  const url = normalize(options.url)
-  if (!url) throw new Error('<url> is required')
-
-  return {
-    Capabilities: Object.assign({
-      _attributes: {
-        xmlns: 'http://www.opengis.net/wmts/1.0',
-        'xmlns:ows': 'http://www.opengis.net/ows/1.1',
-        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        'xmlns:gml': 'http://www.opengis.net/gml',
-        'xsi:schemaLocation': 'http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd',
-        version: '1.0.0'
-      }
-    },
-      ServiceIdentification(options),
-      OperationsMetadata(url),
-      Contents(options),
-      {ServiceMetadataURL: {_attributes: { 'xlink:href': url + '/1.0.0/WMTSCapabilities.xml' }}}
-    )
-  }
-}
-
-/**
- * GoogleMapsCompatible JSON scheme
- *
- * @private
- * @param {number} [minzoom=0] Minimum zoom level
- * @param {number} [maxzoom=22] Maximum zoom level
- * @returns {ElementCompact} JSON scheme
- * @example
- * wmts.GoogleMapsCompatible(10, 17)
- */
-function GoogleMapsCompatible (minzoom, maxzoom) {
-  minzoom = (minzoom !== undefined) ? minzoom : MINZOOM
-  maxzoom = (maxzoom !== undefined) ? maxzoom : MAXZOOM
-  return {
-    TileMatrixSet: {
-      'ows:Title': {_text: 'GoogleMapsCompatible'},
-      'ows:Abstract': {_text: "the wellknown 'GoogleMapsCompatible' tile matrix set defined by OGC WMTS specification"},
-      'ows:Identifier': {_text: 'GoogleMapsCompatible'},
-      'ows:SupportedCRS': {_text: 'urn:ogc:def:crs:EPSG:6.18.3:3857'},
-      WellKnownScaleSet: {_text: 'urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible'},
-      TileMatrix: TileMatrix(minzoom, maxzoom).TileMatrix
-    }
-  }
-}
-
-/**
- * TileMatrix JSON scheme
- *
- * @private
- * @param {number} [minzoom=0] Minimum zoom level
- * @param {number} [maxzoom=22] Maximum zoom level
- * @returns {ElementCompact} JSON scheme
- * @example
- * wmts.TileMatrix(0, 18)
- */
-function TileMatrix (minzoom, maxzoom) {
-  minzoom = (minzoom !== undefined) ? minzoom : MINZOOM
-  maxzoom = (maxzoom !== undefined) ? maxzoom : MAXZOOM
-  const TileMatrix = range(minzoom, maxzoom + 1).map(function (zoom) {
-    const matrix = Math.pow(2, zoom)
-    const ScaleDenominator = 559082264.0287178 / matrix
-    return {
-      'ows:Identifier': {_text: String(zoom)},
-      ScaleDenominator: {_text: String(ScaleDenominator)},
-      TopLeftCorner: {_text: '-20037508.34278925 20037508.34278925'},
-      TileWidth: {_text: '256'},
-      TileHeight: {_text: '256'},
-      MatrixWidth: {_text: String(matrix)},
-      MatrixHeight: {_text: String(matrix)}
-    }
-  })
-  return {TileMatrix: TileMatrix}
-}
-
-/**
- * ServiceIdentification JSON scheme
- *
- * @private
- * @param {Options} options Options
- * @param {string} options.title Title of service
- * @returns {ElementCompact} JSON scheme
- * @example
- * ServiceIdentification({
- *   title: 'Service name',
- *   abstract: 'A long description of this service',
- *   keywords: ['world', 'wmts', 'imagery']
- * })
- */
-function ServiceIdentification (options) {
-  options = options || {}
-
-  // Required options
-  const title = options.title
-  if (!title) throw new Error('<title> required')
-
-  // Optional options
-  // const abstract = options.abstract
-  // const accessConstraints = options.accessConstraints
-  // const fees = options.fees
-  // const keywords = options.keywords
-
-  return clean({
-    'ows:ServiceIdentification': {
-      'ows:Title': {_text: title},
-      'ows:ServiceType': {_text: 'OGC WMTS'},
-      'ows:ServiceTypeVersion': {_text: '1.0.0'}
-    }
-  })
-}
-
-/**
- * Keywords JSON scheme
- *
- * @private
- * @param {string[]} [keywords]
- * @returns {ElementCompact} JSON scheme
- * @example
- * Keywords(['world', 'imagery', 'wmts'])
- */
-function Keywords (keywords) {
-  keywords = keywords || []
-  return {
-    'ows:Keywords': {
-      'ows:Keyword': keywords.map(function (keyword) { return {_text: String(keyword)} })
-    }
-  }
-}
-
-/**
- * OperationsMetadata JSON scheme
- *
- * @private
- * @param {string} url URL of Service Provider
- * @returns {ElementCompact} JSON scheme
- * @example
- * OperationsMetadata('http://localhost:5000/wmts')
- */
-function OperationsMetadata (url) {
-  url = normalize(url)
-  if (!url) throw new Error('<url> is required')
-  return {
-    'ows:OperationsMetadata': {
-      'ows:Operation': [
-        Operation('GetCapabilities', url + '/1.0.0/WMTSCapabilities.xml', url + '?')['ows:Operation'],
-        Operation('GetTile', url + '/tile/1.0.0/', url + '?')['ows:Operation']
-      ]
-    }
-  }
-}
-
-/**
- * Operation JSON scheme
- *
- * @private
- * @param {string} operation Name of operation
- * @param {string} restful URL for RESTful
- * @param {string} kvp URL for KVP
- * @returns {ElementCompact} JSON scheme
- */
-function Operation (operation, restful, kvp) {
-  return {
-    'ows:Operation': {_attributes: {name: operation},
-      'ows:DCP': {
-        'ows:HTTP': {
-          'ows:Get': [Get(restful, 'RESTful')['ows:Get'], Get(kvp, 'KVP')['ows:Get']]
-        }
-      }
-    }
-  }
-}
-
-/**
- * Get JSON scheme
- *
- * @private
- * @param {string} url URL of Service Provider
- * @param {string} value Type of Get 'RESTful' | 'KVP'
- * @returns {ElementCompact} JSON scheme
- * @example
- * Get()
- * //= Get > Constraint > AllowedValues> Value
- */
-function Get (url, value) {
-  return {
-    'ows:Get': {_attributes: {'xlink:href': url},
-      'ows:Constraint': {_attributes: {name: 'GetEncoding'}},
-      'ows:AllowedValues': {
-        'ows:Value': {_text: value}
-      }
-    }
-  }
-}
-
-/**
- * Capabilities.Contents JSON scheme
- *
- * @private
- * @param {Options} options Options
- * @returns {Element}
- * @example
- * Contents()
- * //= Contents > [Layer, TileMatrixSet, TileMatrixSet]
- */
-function Contents (options) {
-  options = options || {}
-
-  return {
-    Contents: {
-      Layer: Layer(options).Layer,
-      TileMatrixSet: GoogleMapsCompatible(options.minzoom, options.maxzoom).TileMatrixSet
-    }
-  }
-}
-
-/**
- * Capabilities.Contents.Layer JSON scheme
- *
- * @private
- * @param {Options} options Options
- * @param {string} options.title Title
- * @param {string} options.url URL
- * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
- * @param {string} [options.abstract] Abstract
- * @param {string} [options.identifier] Identifier
- * @param {BBox} [options.bbox=[-180, -85, 180, 85]] BBox [west, south, east, north]
- * @returns {ElementCompact} JSON scheme
- * @example
- * Layer({
- *   title: 'Tile Service'
- *   url: 'http://localhost:5000/wmts'
- *   format: 'jpg'
- * })
- */
-function Layer (options) {
-  options = options || {}
-
-  // Catch errors
-  if (options.title === undefined) throw new Error('<title> is required')
-  if (options.url === undefined) throw new Error('<url> is required')
-  if (options.format === undefined) throw new Error('<format> is required')
-
-  // Required options
-  const title = options.title
-  const url = options.url
-  const format = (options.format === 'jpg') ? 'jpeg' : options.format
-
-  // Optional options
-  const abstract = options.abstract
-  const identifier = options.identifier || title
-  const bbox = options.bbox || BBOX
-
-  // Derived Variables
-  const contentType = 'image/' + format
-  const southwest = bbox.slice(0, 2)
-  const northeast = bbox.slice(2, 4)
-  const template = url + '/tile/1.0.0/' + identifier + '/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}'
-
-  return clean({
-    Layer: {
-      'ows:Title': { _text: title },
-      'ows:Identifier': identifier ? { _text: identifier } : { _text: title },
-      'ows:Abstract': abstract ? { _text: abstract } : undefined,
-      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
-        'ows:LowerCorner': { _text: southwest.join(' ') },
-        'ows:UpperCorner': { _text: northeast.join(' ') }
-      },
-      Style: { _attributes: { isDefault: 'true' },
-        'ows:Title': { _text: 'Default Style' },
-        'ows:Identifier': { _text: 'default' }
-      },
-      Format: { _text: contentType },
-      TileMatrixSetLink: {
-        TileMatrixSet: { _text: 'GoogleMapsCompatible' }
-      },
-      ResourceURL: {_attributes: { format: contentType, resourceType: 'tile', template: template }}
-    }
-  })
-}
-
-/**
- * Clean remove undefined attributes from object
- *
- * @private
- * @param {Object} obj JSON object
- * @returns {Object} clean JSON object
- * @example
- * clean({foo: undefined, bar: 123})
- * //={bar: 123}
- * clean({foo: 0, bar: 'a'})
- * //={foo: 0, bar: 'a'}
- */
-function clean (obj) {
-  return JSON.parse(JSON.stringify(obj))
-}
-
-/**
- * Normalize URL
- *
- * @private
- * @param {string} url
- * @returns {string} Normalized URL
- * @example
- * normalize('http://localhost:5000')
- * //=http://localhost:5000/
- */
-function normalize (url) {
-  return url && url.replace(/$\//, '')
-}
-
-/**
- * Generate an integer Array containing an arithmetic progression.
- *
- * @private
- * @param {number} [start=0] Start
- * @param {number} stop Stop
- * @param {number} [step=1] Step
- * @returns {number[]} range
- * @example
- * mercator.range(3)
- * //=[ 0, 1, 2 ]
- * mercator.range(3, 6)
- * //=[ 3, 4, 5 ]
- * mercator.range(6, 3, -1)
- * //=[ 6, 5, 4 ]
- */
-function range (start, stop, step) {
-  if (stop == null) {
-    stop = start || 0
-    start = 0
-  }
-  if (!step) {
-    step = stop < start ? -1 : 1
-  }
-  var length = Math.max(Math.ceil((stop - start) / step), 0)
-  var range = Array(length)
-  for (var idx = 0; idx < length; idx++, start += step) {
-    range[idx] = start
-  }
-  return range
-}
-
 module.exports = {
-  getCapabilities: getCapabilities,
-  Capabilities: Capabilities,
-  GoogleMapsCompatible: GoogleMapsCompatible,
-  TileMatrix: TileMatrix,
-  ServiceIdentification: ServiceIdentification,
-  Keywords: Keywords,
-  OperationsMetadata: OperationsMetadata,
-  Operation: Operation,
-  Get: Get,
-  Contents: Contents,
-  Layer: Layer,
-  clean: clean
+  getCapabilities: require('./src/getCapabilities')
 }
 
-},{"xml-js":28}],2:[function(require,module,exports){
+},{"./src/getCapabilities":37}],2:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -549,6 +122,118 @@ function fromByteArray (uint8) {
 },{}],3:[function(require,module,exports){
 
 },{}],4:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var buffer = require('buffer');
+var Buffer = buffer.Buffer;
+var SlowBuffer = buffer.SlowBuffer;
+var MAX_LEN = buffer.kMaxLength || 2147483647;
+exports.alloc = function alloc(size, fill, encoding) {
+  if (typeof Buffer.alloc === 'function') {
+    return Buffer.alloc(size, fill, encoding);
+  }
+  if (typeof encoding === 'number') {
+    throw new TypeError('encoding must not be number');
+  }
+  if (typeof size !== 'number') {
+    throw new TypeError('size must be a number');
+  }
+  if (size > MAX_LEN) {
+    throw new RangeError('size is too large');
+  }
+  var enc = encoding;
+  var _fill = fill;
+  if (_fill === undefined) {
+    enc = undefined;
+    _fill = 0;
+  }
+  var buf = new Buffer(size);
+  if (typeof _fill === 'string') {
+    var fillBuf = new Buffer(_fill, enc);
+    var flen = fillBuf.length;
+    var i = -1;
+    while (++i < size) {
+      buf[i] = fillBuf[i % flen];
+    }
+  } else {
+    buf.fill(_fill);
+  }
+  return buf;
+}
+exports.allocUnsafe = function allocUnsafe(size) {
+  if (typeof Buffer.allocUnsafe === 'function') {
+    return Buffer.allocUnsafe(size);
+  }
+  if (typeof size !== 'number') {
+    throw new TypeError('size must be a number');
+  }
+  if (size > MAX_LEN) {
+    throw new RangeError('size is too large');
+  }
+  return new Buffer(size);
+}
+exports.from = function from(value, encodingOrOffset, length) {
+  if (typeof Buffer.from === 'function' && (!global.Uint8Array || Uint8Array.from !== Buffer.from)) {
+    return Buffer.from(value, encodingOrOffset, length);
+  }
+  if (typeof value === 'number') {
+    throw new TypeError('"value" argument must not be a number');
+  }
+  if (typeof value === 'string') {
+    return new Buffer(value, encodingOrOffset);
+  }
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    var offset = encodingOrOffset;
+    if (arguments.length === 1) {
+      return new Buffer(value);
+    }
+    if (typeof offset === 'undefined') {
+      offset = 0;
+    }
+    var len = length;
+    if (typeof len === 'undefined') {
+      len = value.byteLength - offset;
+    }
+    if (offset >= value.byteLength) {
+      throw new RangeError('\'offset\' is out of bounds');
+    }
+    if (len > value.byteLength - offset) {
+      throw new RangeError('\'length\' is out of bounds');
+    }
+    return new Buffer(value.slice(offset, offset + len));
+  }
+  if (Buffer.isBuffer(value)) {
+    var out = new Buffer(value.length);
+    value.copy(out, 0, 0, value.length);
+    return out;
+  }
+  if (value) {
+    if (Array.isArray(value) || (typeof ArrayBuffer !== 'undefined' && value.buffer instanceof ArrayBuffer) || 'length' in value) {
+      return new Buffer(value);
+    }
+    if (value.type === 'Buffer' && Array.isArray(value.data)) {
+      return new Buffer(value.data);
+    }
+  }
+
+  throw new TypeError('First argument must be a string, Buffer, ' + 'ArrayBuffer, Array, or array-like object.');
+}
+exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
+  if (typeof Buffer.allocUnsafeSlow === 'function') {
+    return Buffer.allocUnsafeSlow(size);
+  }
+  if (typeof size !== 'number') {
+    throw new TypeError('size must be a number');
+  }
+  if (size >= MAX_LEN) {
+    throw new RangeError('size is too large');
+  }
+  return new SlowBuffer(size);
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"buffer":5}],5:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -2256,7 +1941,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":2,"ieee754":7}],5:[function(require,module,exports){
+},{"base64-js":2,"ieee754":8}],6:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2367,7 +2052,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":9}],6:[function(require,module,exports){
+},{"../../is-buffer/index.js":10}],7:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2671,7 +2356,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -2757,7 +2442,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2782,7 +2467,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -2805,14 +2490,14 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -2859,7 +2544,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 }
 
 }).call(this,require('_process'))
-},{"_process":12}],12:[function(require,module,exports){
+},{"_process":13}],13:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -3030,6 +2715,10 @@ process.off = noop;
 process.removeListener = noop;
 process.removeAllListeners = noop;
 process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
 
 process.binding = function (name) {
     throw new Error('process.binding is not supported');
@@ -3041,10 +2730,10 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],13:[function(require,module,exports){
-module.exports = require("./lib/_stream_duplex.js")
+},{}],14:[function(require,module,exports){
+module.exports = require('./lib/_stream_duplex.js');
 
-},{"./lib/_stream_duplex.js":14}],14:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":15}],15:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -3120,7 +2809,7 @@ function forEach(xs, f) {
     f(xs[i], i);
   }
 }
-},{"./_stream_readable":16,"./_stream_writable":18,"core-util-is":5,"inherits":8,"process-nextick-args":11}],15:[function(require,module,exports){
+},{"./_stream_readable":17,"./_stream_writable":19,"core-util-is":6,"inherits":9,"process-nextick-args":12}],16:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -3147,7 +2836,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":17,"core-util-is":5,"inherits":8}],16:[function(require,module,exports){
+},{"./_stream_transform":18,"core-util-is":6,"inherits":9}],17:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -3162,31 +2851,27 @@ var isArray = require('isarray');
 /*</replacement>*/
 
 /*<replacement>*/
-var Buffer = require('buffer').Buffer;
+var Duplex;
 /*</replacement>*/
 
 Readable.ReadableState = ReadableState;
 
-var EE = require('events');
-
 /*<replacement>*/
+var EE = require('events').EventEmitter;
+
 var EElistenerCount = function (emitter, type) {
   return emitter.listeners(type).length;
 };
 /*</replacement>*/
 
 /*<replacement>*/
-var Stream;
-(function () {
-  try {
-    Stream = require('st' + 'ream');
-  } catch (_) {} finally {
-    if (!Stream) Stream = require('events').EventEmitter;
-  }
-})();
+var Stream = require('./internal/streams/stream');
 /*</replacement>*/
 
 var Buffer = require('buffer').Buffer;
+/*<replacement>*/
+var bufferShim = require('buffer-shims');
+/*</replacement>*/
 
 /*<replacement>*/
 var util = require('core-util-is');
@@ -3195,7 +2880,7 @@ util.inherits = require('inherits');
 
 /*<replacement>*/
 var debugUtil = require('util');
-var debug = undefined;
+var debug = void 0;
 if (debugUtil && debugUtil.debuglog) {
   debug = debugUtil.debuglog('stream');
 } else {
@@ -3203,11 +2888,27 @@ if (debugUtil && debugUtil.debuglog) {
 }
 /*</replacement>*/
 
+var BufferList = require('./internal/streams/BufferList');
 var StringDecoder;
 
 util.inherits(Readable, Stream);
 
-var Duplex;
+var kProxyEvents = ['error', 'close', 'destroy', 'pause', 'resume'];
+
+function prependListener(emitter, event, fn) {
+  // Sadly this is not cacheable as some libraries bundle their own
+  // event emitter implementation with them.
+  if (typeof emitter.prependListener === 'function') {
+    return emitter.prependListener(event, fn);
+  } else {
+    // This is a hack to make sure that our error handler is attached before any
+    // userland ones.  NEVER DO THIS. This is here only because this code needs
+    // to continue to work with older versions of Node.js that do not include
+    // the prependListener() method. The goal is to eventually remove this hack.
+    if (!emitter._events || !emitter._events[event]) emitter.on(event, fn);else if (isArray(emitter._events[event])) emitter._events[event].unshift(fn);else emitter._events[event] = [fn, emitter._events[event]];
+  }
+}
+
 function ReadableState(options, stream) {
   Duplex = Duplex || require('./_stream_duplex');
 
@@ -3226,9 +2927,12 @@ function ReadableState(options, stream) {
   this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
 
   // cast to ints.
-  this.highWaterMark = ~ ~this.highWaterMark;
+  this.highWaterMark = ~~this.highWaterMark;
 
-  this.buffer = [];
+  // A linked list is used to store data chunks instead of an array because the
+  // linked list can remove elements from the beginning faster than
+  // array.shift()
+  this.buffer = new BufferList();
   this.length = 0;
   this.pipes = null;
   this.pipesCount = 0;
@@ -3274,7 +2978,6 @@ function ReadableState(options, stream) {
   }
 }
 
-var Duplex;
 function Readable(options) {
   Duplex = Duplex || require('./_stream_duplex');
 
@@ -3300,7 +3003,7 @@ Readable.prototype.push = function (chunk, encoding) {
   if (!state.objectMode && typeof chunk === 'string') {
     encoding = encoding || state.defaultEncoding;
     if (encoding !== state.encoding) {
-      chunk = new Buffer(chunk, encoding);
+      chunk = bufferShim.from(chunk, encoding);
       encoding = '';
     }
   }
@@ -3330,8 +3033,8 @@ function readableAddChunk(stream, state, chunk, encoding, addToFront) {
       var e = new Error('stream.push() after EOF');
       stream.emit('error', e);
     } else if (state.endEmitted && addToFront) {
-      var e = new Error('stream.unshift() after end event');
-      stream.emit('error', e);
+      var _e = new Error('stream.unshift() after end event');
+      stream.emit('error', _e);
     } else {
       var skipAdd;
       if (state.decoder && !addToFront && !encoding) {
@@ -3391,7 +3094,8 @@ function computeNewHighWaterMark(n) {
   if (n >= MAX_HWM) {
     n = MAX_HWM;
   } else {
-    // Get the next highest power of 2
+    // Get the next highest power of 2 to prevent increasing hwm excessively in
+    // tiny amounts
     n--;
     n |= n >>> 1;
     n |= n >>> 2;
@@ -3403,44 +3107,34 @@ function computeNewHighWaterMark(n) {
   return n;
 }
 
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
 function howMuchToRead(n, state) {
-  if (state.length === 0 && state.ended) return 0;
-
-  if (state.objectMode) return n === 0 ? 0 : 1;
-
-  if (n === null || isNaN(n)) {
-    // only flow one buffer at a time
-    if (state.flowing && state.buffer.length) return state.buffer[0].length;else return state.length;
+  if (n <= 0 || state.length === 0 && state.ended) return 0;
+  if (state.objectMode) return 1;
+  if (n !== n) {
+    // Only flow one buffer at a time
+    if (state.flowing && state.length) return state.buffer.head.data.length;else return state.length;
   }
-
-  if (n <= 0) return 0;
-
-  // If we're asking for more than the target buffer level,
-  // then raise the water mark.  Bump up to the next highest
-  // power of 2, to prevent increasing it excessively in tiny
-  // amounts.
+  // If we're asking for more than the current hwm, then raise the hwm.
   if (n > state.highWaterMark) state.highWaterMark = computeNewHighWaterMark(n);
-
-  // don't have that much.  return null, unless we've ended.
-  if (n > state.length) {
-    if (!state.ended) {
-      state.needReadable = true;
-      return 0;
-    } else {
-      return state.length;
-    }
+  if (n <= state.length) return n;
+  // Don't have enough
+  if (!state.ended) {
+    state.needReadable = true;
+    return 0;
   }
-
-  return n;
+  return state.length;
 }
 
 // you can override either this method, or the async _read(n) below.
 Readable.prototype.read = function (n) {
   debug('read', n);
+  n = parseInt(n, 10);
   var state = this._readableState;
   var nOrig = n;
 
-  if (typeof n !== 'number' || n > 0) state.emittedReadable = false;
+  if (n !== 0) state.emittedReadable = false;
 
   // if we're doing read(0) to trigger a readable event, but we
   // already have a bunch of data in the buffer, then just trigger
@@ -3496,9 +3190,7 @@ Readable.prototype.read = function (n) {
   if (state.ended || state.reading) {
     doRead = false;
     debug('reading or ended', doRead);
-  }
-
-  if (doRead) {
+  } else if (doRead) {
     debug('do read');
     state.reading = true;
     state.sync = true;
@@ -3507,11 +3199,10 @@ Readable.prototype.read = function (n) {
     // call internal read method
     this._read(state.highWaterMark);
     state.sync = false;
+    // If _read pushed data synchronously, then `reading` will be false,
+    // and we need to re-evaluate how much data we can return to the user.
+    if (!state.reading) n = howMuchToRead(nOrig, state);
   }
-
-  // If _read pushed data synchronously, then `reading` will be false,
-  // and we need to re-evaluate how much data we can return to the user.
-  if (doRead && !state.reading) n = howMuchToRead(nOrig, state);
 
   var ret;
   if (n > 0) ret = fromList(n, state);else ret = null;
@@ -3519,16 +3210,18 @@ Readable.prototype.read = function (n) {
   if (ret === null) {
     state.needReadable = true;
     n = 0;
+  } else {
+    state.length -= n;
   }
 
-  state.length -= n;
+  if (state.length === 0) {
+    // If we have nothing in the buffer, then we want to know
+    // as soon as we *do* get something into the buffer.
+    if (!state.ended) state.needReadable = true;
 
-  // If we have nothing in the buffer, then we want to know
-  // as soon as we *do* get something into the buffer.
-  if (state.length === 0 && !state.ended) state.needReadable = true;
-
-  // If we tried to read() past the EOF, then emit end on the next tick.
-  if (nOrig !== n && state.ended && state.length === 0) endReadable(this);
+    // If we tried to read() past the EOF, then emit end on the next tick.
+    if (nOrig !== n && state.ended) endReadable(this);
+  }
 
   if (ret !== null) this.emit('data', ret);
 
@@ -3607,7 +3300,7 @@ function maybeReadMore_(stream, state) {
 // for virtual (non-string, non-buffer) streams, "length" is somewhat
 // arbitrary, and perhaps not very meaningful.
 Readable.prototype._read = function (n) {
-  this.emit('error', new Error('not implemented'));
+  this.emit('error', new Error('_read() is not implemented'));
 };
 
 Readable.prototype.pipe = function (dest, pipeOpts) {
@@ -3676,17 +3369,25 @@ Readable.prototype.pipe = function (dest, pipeOpts) {
     if (state.awaitDrain && (!dest._writableState || dest._writableState.needDrain)) ondrain();
   }
 
+  // If the user pushes more data while we're writing to dest then we'll end up
+  // in ondata again. However, we only want to increase awaitDrain once because
+  // dest will only emit one 'drain' event for the multiple writes.
+  // => Introduce a guard on increasing awaitDrain.
+  var increasedAwaitDrain = false;
   src.on('data', ondata);
   function ondata(chunk) {
     debug('ondata');
+    increasedAwaitDrain = false;
     var ret = dest.write(chunk);
-    if (false === ret) {
+    if (false === ret && !increasedAwaitDrain) {
       // If the user unpiped during `dest.write()`, it is possible
       // to get stuck in a permanently paused state if that write
       // also returned false.
-      if (state.pipesCount === 1 && state.pipes[0] === dest && src.listenerCount('data') === 1 && !cleanedUp) {
+      // => Check whether `dest` is still a piping destination.
+      if ((state.pipesCount === 1 && state.pipes === dest || state.pipesCount > 1 && indexOf(state.pipes, dest) !== -1) && !cleanedUp) {
         debug('false write response, pause', src._readableState.awaitDrain);
         src._readableState.awaitDrain++;
+        increasedAwaitDrain = true;
       }
       src.pause();
     }
@@ -3700,9 +3401,9 @@ Readable.prototype.pipe = function (dest, pipeOpts) {
     dest.removeListener('error', onerror);
     if (EElistenerCount(dest, 'error') === 0) dest.emit('error', er);
   }
-  // This is a brutally ugly hack to make sure that our error handler
-  // is attached before any userland ones.  NEVER DO THIS.
-  if (!dest._events || !dest._events.error) dest.on('error', onerror);else if (isArray(dest._events.error)) dest._events.error.unshift(onerror);else dest._events.error = [onerror, dest._events.error];
+
+  // Make sure our error handler is attached before userland ones.
+  prependListener(dest, 'error', onerror);
 
   // Both close and finish should trigger unpipe, but only once.
   function onclose() {
@@ -3777,16 +3478,16 @@ Readable.prototype.unpipe = function (dest) {
     state.pipesCount = 0;
     state.flowing = false;
 
-    for (var _i = 0; _i < len; _i++) {
-      dests[_i].emit('unpipe', this);
+    for (var i = 0; i < len; i++) {
+      dests[i].emit('unpipe', this);
     }return this;
   }
 
   // try to find the right one.
-  var i = indexOf(state.pipes, dest);
-  if (i === -1) return this;
+  var index = indexOf(state.pipes, dest);
+  if (index === -1) return this;
 
-  state.pipes.splice(i, 1);
+  state.pipes.splice(index, 1);
   state.pipesCount -= 1;
   if (state.pipesCount === 1) state.pipes = state.pipes[0];
 
@@ -3800,18 +3501,14 @@ Readable.prototype.unpipe = function (dest) {
 Readable.prototype.on = function (ev, fn) {
   var res = Stream.prototype.on.call(this, ev, fn);
 
-  // If listening to data, and it has not explicitly been paused,
-  // then call resume to start the flow of data on the next tick.
-  if (ev === 'data' && false !== this._readableState.flowing) {
-    this.resume();
-  }
-
-  if (ev === 'readable' && !this._readableState.endEmitted) {
+  if (ev === 'data') {
+    // Start flowing on next tick if stream isn't explicitly paused
+    if (this._readableState.flowing !== false) this.resume();
+  } else if (ev === 'readable') {
     var state = this._readableState;
-    if (!state.readableListening) {
-      state.readableListening = true;
+    if (!state.endEmitted && !state.readableListening) {
+      state.readableListening = state.needReadable = true;
       state.emittedReadable = false;
-      state.needReadable = true;
       if (!state.reading) {
         processNextTick(nReadingNextTick, this);
       } else if (state.length) {
@@ -3855,6 +3552,7 @@ function resume_(stream, state) {
   }
 
   state.resumeScheduled = false;
+  state.awaitDrain = 0;
   stream.emit('resume');
   flow(stream);
   if (state.flowing && !state.reading) stream.read(0);
@@ -3873,11 +3571,7 @@ Readable.prototype.pause = function () {
 function flow(stream) {
   var state = stream._readableState;
   debug('flow', state.flowing);
-  if (state.flowing) {
-    do {
-      var chunk = stream.read();
-    } while (null !== chunk && state.flowing);
-  }
+  while (state.flowing && stream.read() !== null) {}
 }
 
 // wrap an old-style stream as the async data source.
@@ -3925,10 +3619,9 @@ Readable.prototype.wrap = function (stream) {
   }
 
   // proxy certain important events.
-  var events = ['error', 'close', 'destroy', 'pause', 'resume'];
-  forEach(events, function (ev) {
-    stream.on(ev, self.emit.bind(self, ev));
-  });
+  for (var n = 0; n < kProxyEvents.length; n++) {
+    stream.on(kProxyEvents[n], self.emit.bind(self, kProxyEvents[n]));
+  }
 
   // when we try to consume some more bytes, simply unpause the
   // underlying stream.
@@ -3948,50 +3641,101 @@ Readable._fromList = fromList;
 
 // Pluck off n bytes from an array of buffers.
 // Length is the combined lengths of all the buffers in the list.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
 function fromList(n, state) {
-  var list = state.buffer;
-  var length = state.length;
-  var stringMode = !!state.decoder;
-  var objectMode = !!state.objectMode;
+  // nothing buffered
+  if (state.length === 0) return null;
+
   var ret;
-
-  // nothing in the list, definitely empty.
-  if (list.length === 0) return null;
-
-  if (length === 0) ret = null;else if (objectMode) ret = list.shift();else if (!n || n >= length) {
-    // read it all, truncate the array.
-    if (stringMode) ret = list.join('');else if (list.length === 1) ret = list[0];else ret = Buffer.concat(list, length);
-    list.length = 0;
+  if (state.objectMode) ret = state.buffer.shift();else if (!n || n >= state.length) {
+    // read it all, truncate the list
+    if (state.decoder) ret = state.buffer.join('');else if (state.buffer.length === 1) ret = state.buffer.head.data;else ret = state.buffer.concat(state.length);
+    state.buffer.clear();
   } else {
-    // read just some of it.
-    if (n < list[0].length) {
-      // just take a part of the first list item.
-      // slice is the same for buffers and strings.
-      var buf = list[0];
-      ret = buf.slice(0, n);
-      list[0] = buf.slice(n);
-    } else if (n === list[0].length) {
-      // first list is a perfect match
-      ret = list.shift();
-    } else {
-      // complex case.
-      // we have enough to cover it, but it spans past the first buffer.
-      if (stringMode) ret = '';else ret = new Buffer(n);
-
-      var c = 0;
-      for (var i = 0, l = list.length; i < l && c < n; i++) {
-        var buf = list[0];
-        var cpy = Math.min(n - c, buf.length);
-
-        if (stringMode) ret += buf.slice(0, cpy);else buf.copy(ret, c, 0, cpy);
-
-        if (cpy < buf.length) list[0] = buf.slice(cpy);else list.shift();
-
-        c += cpy;
-      }
-    }
+    // read part of list
+    ret = fromListPartial(n, state.buffer, state.decoder);
   }
 
+  return ret;
+}
+
+// Extracts only enough buffered data to satisfy the amount requested.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function fromListPartial(n, list, hasStrings) {
+  var ret;
+  if (n < list.head.data.length) {
+    // slice is the same for buffers and strings
+    ret = list.head.data.slice(0, n);
+    list.head.data = list.head.data.slice(n);
+  } else if (n === list.head.data.length) {
+    // first chunk is a perfect match
+    ret = list.shift();
+  } else {
+    // result spans more than one buffer
+    ret = hasStrings ? copyFromBufferString(n, list) : copyFromBuffer(n, list);
+  }
+  return ret;
+}
+
+// Copies a specified amount of characters from the list of buffered data
+// chunks.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function copyFromBufferString(n, list) {
+  var p = list.head;
+  var c = 1;
+  var ret = p.data;
+  n -= ret.length;
+  while (p = p.next) {
+    var str = p.data;
+    var nb = n > str.length ? str.length : n;
+    if (nb === str.length) ret += str;else ret += str.slice(0, n);
+    n -= nb;
+    if (n === 0) {
+      if (nb === str.length) {
+        ++c;
+        if (p.next) list.head = p.next;else list.head = list.tail = null;
+      } else {
+        list.head = p;
+        p.data = str.slice(nb);
+      }
+      break;
+    }
+    ++c;
+  }
+  list.length -= c;
+  return ret;
+}
+
+// Copies a specified amount of bytes from the list of buffered data chunks.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function copyFromBuffer(n, list) {
+  var ret = bufferShim.allocUnsafe(n);
+  var p = list.head;
+  var c = 1;
+  p.data.copy(ret);
+  n -= p.data.length;
+  while (p = p.next) {
+    var buf = p.data;
+    var nb = n > buf.length ? buf.length : n;
+    buf.copy(ret, ret.length - n, 0, nb);
+    n -= nb;
+    if (n === 0) {
+      if (nb === buf.length) {
+        ++c;
+        if (p.next) list.head = p.next;else list.head = list.tail = null;
+      } else {
+        list.head = p;
+        p.data = buf.slice(nb);
+      }
+      break;
+    }
+    ++c;
+  }
+  list.length -= c;
   return ret;
 }
 
@@ -4000,7 +3744,7 @@ function endReadable(stream) {
 
   // If we get here before consuming all the bytes, then that is a
   // bug in node.  Should never happen.
-  if (state.length > 0) throw new Error('endReadable called on non-empty stream');
+  if (state.length > 0) throw new Error('"endReadable()" called on non-empty stream');
 
   if (!state.endEmitted) {
     state.ended = true;
@@ -4030,7 +3774,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'))
-},{"./_stream_duplex":14,"_process":12,"buffer":4,"core-util-is":5,"events":6,"inherits":8,"isarray":10,"process-nextick-args":11,"string_decoder/":25,"util":3}],17:[function(require,module,exports){
+},{"./_stream_duplex":15,"./internal/streams/BufferList":20,"./internal/streams/stream":21,"_process":13,"buffer":5,"buffer-shims":4,"core-util-is":6,"events":7,"inherits":9,"isarray":11,"process-nextick-args":12,"string_decoder/":22,"util":3}],18:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -4127,7 +3871,6 @@ function Transform(options) {
 
   this._transformState = new TransformState(this);
 
-  // when the writable side finishes, then flush out anything remaining.
   var stream = this;
 
   // start out asking for a readable event once data is transformed.
@@ -4144,9 +3887,10 @@ function Transform(options) {
     if (typeof options.flush === 'function') this._flush = options.flush;
   }
 
+  // When the writable side finishes, then flush out anything remaining.
   this.once('prefinish', function () {
-    if (typeof this._flush === 'function') this._flush(function (er) {
-      done(stream, er);
+    if (typeof this._flush === 'function') this._flush(function (er, data) {
+      done(stream, er, data);
     });else done(stream);
   });
 }
@@ -4167,7 +3911,7 @@ Transform.prototype.push = function (chunk, encoding) {
 // an error, then that'll put the hurt on the whole operation.  If you
 // never call cb(), then you'll never get another chunk.
 Transform.prototype._transform = function (chunk, encoding, cb) {
-  throw new Error('not implemented');
+  throw new Error('_transform() is not implemented');
 };
 
 Transform.prototype._write = function (chunk, encoding, cb) {
@@ -4197,21 +3941,23 @@ Transform.prototype._read = function (n) {
   }
 };
 
-function done(stream, er) {
+function done(stream, er, data) {
   if (er) return stream.emit('error', er);
+
+  if (data !== null && data !== undefined) stream.push(data);
 
   // if there's nothing in the write buffer, then that means
   // that nothing more will ever be provided
   var ws = stream._writableState;
   var ts = stream._transformState;
 
-  if (ws.length) throw new Error('calling transform done when ws.length != 0');
+  if (ws.length) throw new Error('Calling transform done when ws.length != 0');
 
-  if (ts.transforming) throw new Error('calling transform done when still transforming');
+  if (ts.transforming) throw new Error('Calling transform done when still transforming');
 
   return stream.push(null);
 }
-},{"./_stream_duplex":14,"core-util-is":5,"inherits":8}],18:[function(require,module,exports){
+},{"./_stream_duplex":15,"core-util-is":6,"inherits":9}],19:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
@@ -4230,7 +3976,7 @@ var asyncWrite = !process.browser && ['v0.10', 'v0.9.'].indexOf(process.version.
 /*</replacement>*/
 
 /*<replacement>*/
-var Buffer = require('buffer').Buffer;
+var Duplex;
 /*</replacement>*/
 
 Writable.WritableState = WritableState;
@@ -4247,17 +3993,13 @@ var internalUtil = {
 /*</replacement>*/
 
 /*<replacement>*/
-var Stream;
-(function () {
-  try {
-    Stream = require('st' + 'ream');
-  } catch (_) {} finally {
-    if (!Stream) Stream = require('events').EventEmitter;
-  }
-})();
+var Stream = require('./internal/streams/stream');
 /*</replacement>*/
 
 var Buffer = require('buffer').Buffer;
+/*<replacement>*/
+var bufferShim = require('buffer-shims');
+/*</replacement>*/
 
 util.inherits(Writable, Stream);
 
@@ -4270,7 +4012,6 @@ function WriteReq(chunk, encoding, cb) {
   this.next = null;
 }
 
-var Duplex;
 function WritableState(options, stream) {
   Duplex = Duplex || require('./_stream_duplex');
 
@@ -4290,8 +4031,9 @@ function WritableState(options, stream) {
   this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
 
   // cast to ints.
-  this.highWaterMark = ~ ~this.highWaterMark;
+  this.highWaterMark = ~~this.highWaterMark;
 
+  // drain event flag.
   this.needDrain = false;
   // at the start of calling end()
   this.ending = false;
@@ -4361,13 +4103,12 @@ function WritableState(options, stream) {
   // count buffered requests
   this.bufferedRequestCount = 0;
 
-  // create the two objects needed to store the corked requests
-  // they are not a linked list, as no new elements are inserted in there
+  // allocate the first CorkedRequest, there is always
+  // one allocated and free to use, and we maintain at most two
   this.corkedRequestsFree = new CorkedRequest(this);
-  this.corkedRequestsFree.next = new CorkedRequest(this);
 }
 
-WritableState.prototype.getBuffer = function writableStateGetBuffer() {
+WritableState.prototype.getBuffer = function getBuffer() {
   var current = this.bufferedRequest;
   var out = [];
   while (current) {
@@ -4387,13 +4128,37 @@ WritableState.prototype.getBuffer = function writableStateGetBuffer() {
   } catch (_) {}
 })();
 
-var Duplex;
+// Test _writableState for inheritance to account for Duplex streams,
+// whose prototype chain only points to Readable.
+var realHasInstance;
+if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === 'function') {
+  realHasInstance = Function.prototype[Symbol.hasInstance];
+  Object.defineProperty(Writable, Symbol.hasInstance, {
+    value: function (object) {
+      if (realHasInstance.call(this, object)) return true;
+
+      return object && object._writableState instanceof WritableState;
+    }
+  });
+} else {
+  realHasInstance = function (object) {
+    return object instanceof this;
+  };
+}
+
 function Writable(options) {
   Duplex = Duplex || require('./_stream_duplex');
 
-  // Writable ctor is applied to Duplexes, though they're not
-  // instanceof Writable, they're instanceof Readable.
-  if (!(this instanceof Writable) && !(this instanceof Duplex)) return new Writable(options);
+  // Writable ctor is applied to Duplexes, too.
+  // `realHasInstance` is necessary because using plain `instanceof`
+  // would return false, as no `_writableState` property is attached.
+
+  // Trying to use the custom `instanceof` for Writable here will also break the
+  // Node.js LazyTransform implementation, which has a non-trivial getter for
+  // `_writableState` that would lead to infinite recursion.
+  if (!realHasInstance.call(Writable, this) && !(this instanceof Duplex)) {
+    return new Writable(options);
+  }
 
   this._writableState = new WritableState(options, this);
 
@@ -4411,7 +4176,7 @@ function Writable(options) {
 
 // Otherwise people can pipe Writable streams, which is just wrong.
 Writable.prototype.pipe = function () {
-  this.emit('error', new Error('Cannot pipe. Not readable.'));
+  this.emit('error', new Error('Cannot pipe, not readable'));
 };
 
 function writeAfterEnd(stream, cb) {
@@ -4421,16 +4186,19 @@ function writeAfterEnd(stream, cb) {
   processNextTick(cb, er);
 }
 
-// If we get something that is not a buffer, string, null, or undefined,
-// and we're not in objectMode, then that's an error.
-// Otherwise stream chunks are all considered to be of length=1, and the
-// watermarks determine how many objects to keep in the buffer, rather than
-// how many bytes or characters.
+// Checks that a user-supplied chunk is valid, especially for the particular
+// mode the stream is in. Currently this means that `null` is never accepted
+// and undefined/non-string values are only allowed in object mode.
 function validChunk(stream, state, chunk, cb) {
   var valid = true;
+  var er = false;
 
-  if (!Buffer.isBuffer(chunk) && typeof chunk !== 'string' && chunk !== null && chunk !== undefined && !state.objectMode) {
-    var er = new TypeError('Invalid non-string/buffer chunk');
+  if (chunk === null) {
+    er = new TypeError('May not write null values to stream');
+  } else if (typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
+    er = new TypeError('Invalid non-string/buffer chunk');
+  }
+  if (er) {
     stream.emit('error', er);
     processNextTick(cb, er);
     valid = false;
@@ -4441,19 +4209,20 @@ function validChunk(stream, state, chunk, cb) {
 Writable.prototype.write = function (chunk, encoding, cb) {
   var state = this._writableState;
   var ret = false;
+  var isBuf = Buffer.isBuffer(chunk);
 
   if (typeof encoding === 'function') {
     cb = encoding;
     encoding = null;
   }
 
-  if (Buffer.isBuffer(chunk)) encoding = 'buffer';else if (!encoding) encoding = state.defaultEncoding;
+  if (isBuf) encoding = 'buffer';else if (!encoding) encoding = state.defaultEncoding;
 
   if (typeof cb !== 'function') cb = nop;
 
-  if (state.ended) writeAfterEnd(this, cb);else if (validChunk(this, state, chunk, cb)) {
+  if (state.ended) writeAfterEnd(this, cb);else if (isBuf || validChunk(this, state, chunk, cb)) {
     state.pendingcb++;
-    ret = writeOrBuffer(this, state, chunk, encoding, cb);
+    ret = writeOrBuffer(this, state, isBuf, chunk, encoding, cb);
   }
 
   return ret;
@@ -4480,11 +4249,12 @@ Writable.prototype.setDefaultEncoding = function setDefaultEncoding(encoding) {
   if (typeof encoding === 'string') encoding = encoding.toLowerCase();
   if (!(['hex', 'utf8', 'utf-8', 'ascii', 'binary', 'base64', 'ucs2', 'ucs-2', 'utf16le', 'utf-16le', 'raw'].indexOf((encoding + '').toLowerCase()) > -1)) throw new TypeError('Unknown encoding: ' + encoding);
   this._writableState.defaultEncoding = encoding;
+  return this;
 };
 
 function decodeChunk(state, chunk, encoding) {
   if (!state.objectMode && state.decodeStrings !== false && typeof chunk === 'string') {
-    chunk = new Buffer(chunk, encoding);
+    chunk = bufferShim.from(chunk, encoding);
   }
   return chunk;
 }
@@ -4492,10 +4262,11 @@ function decodeChunk(state, chunk, encoding) {
 // if we're already writing something, then just put this
 // in the queue, and wait our turn.  Otherwise, call _write
 // If we return false, then we need a drain event, so set that flag.
-function writeOrBuffer(stream, state, chunk, encoding, cb) {
-  chunk = decodeChunk(state, chunk, encoding);
-
-  if (Buffer.isBuffer(chunk)) encoding = 'buffer';
+function writeOrBuffer(stream, state, isBuf, chunk, encoding, cb) {
+  if (!isBuf) {
+    chunk = decodeChunk(state, chunk, encoding);
+    if (Buffer.isBuffer(chunk)) encoding = 'buffer';
+  }
   var len = state.objectMode ? 1 : chunk.length;
 
   state.length += len;
@@ -4564,8 +4335,8 @@ function onwrite(stream, er) {
       asyncWrite(afterWrite, stream, state, finished, cb);
       /*</replacement>*/
     } else {
-        afterWrite(stream, state, finished, cb);
-      }
+      afterWrite(stream, state, finished, cb);
+    }
   }
 }
 
@@ -4607,12 +4378,16 @@ function clearBuffer(stream, state) {
 
     doWrite(stream, state, true, state.length, buffer, '', holder.finish);
 
-    // doWrite is always async, defer these to save a bit of time
+    // doWrite is almost always async, defer these to save a bit of time
     // as the hot path ends with doWrite
     state.pendingcb++;
     state.lastBufferedRequest = null;
-    state.corkedRequestsFree = holder.next;
-    holder.next = null;
+    if (holder.next) {
+      state.corkedRequestsFree = holder.next;
+      holder.next = null;
+    } else {
+      state.corkedRequestsFree = new CorkedRequest(state);
+    }
   } else {
     // Slow case, write chunks one-by-one
     while (entry) {
@@ -4641,7 +4416,7 @@ function clearBuffer(stream, state) {
 }
 
 Writable.prototype._write = function (chunk, encoding, cb) {
-  cb(new Error('not implemented'));
+  cb(new Error('_write() is not implemented'));
 };
 
 Writable.prototype._writev = null;
@@ -4712,7 +4487,6 @@ function CorkedRequest(state) {
 
   this.next = null;
   this.entry = null;
-
   this.finish = function (err) {
     var entry = _this.entry;
     _this.entry = null;
@@ -4730,30 +4504,367 @@ function CorkedRequest(state) {
   };
 }
 }).call(this,require('_process'))
-},{"./_stream_duplex":14,"_process":12,"buffer":4,"core-util-is":5,"events":6,"inherits":8,"process-nextick-args":11,"util-deprecate":26}],19:[function(require,module,exports){
-module.exports = require("./lib/_stream_passthrough.js")
+},{"./_stream_duplex":15,"./internal/streams/stream":21,"_process":13,"buffer":5,"buffer-shims":4,"core-util-is":6,"inherits":9,"process-nextick-args":12,"util-deprecate":30}],20:[function(require,module,exports){
+'use strict';
 
-},{"./lib/_stream_passthrough.js":15}],20:[function(require,module,exports){
-var Stream = (function (){
-  try {
-    return require('st' + 'ream'); // hack to fix a circular dependency issue when used with browserify
-  } catch(_){}
-}());
+var Buffer = require('buffer').Buffer;
+/*<replacement>*/
+var bufferShim = require('buffer-shims');
+/*</replacement>*/
+
+module.exports = BufferList;
+
+function BufferList() {
+  this.head = null;
+  this.tail = null;
+  this.length = 0;
+}
+
+BufferList.prototype.push = function (v) {
+  var entry = { data: v, next: null };
+  if (this.length > 0) this.tail.next = entry;else this.head = entry;
+  this.tail = entry;
+  ++this.length;
+};
+
+BufferList.prototype.unshift = function (v) {
+  var entry = { data: v, next: this.head };
+  if (this.length === 0) this.tail = entry;
+  this.head = entry;
+  ++this.length;
+};
+
+BufferList.prototype.shift = function () {
+  if (this.length === 0) return;
+  var ret = this.head.data;
+  if (this.length === 1) this.head = this.tail = null;else this.head = this.head.next;
+  --this.length;
+  return ret;
+};
+
+BufferList.prototype.clear = function () {
+  this.head = this.tail = null;
+  this.length = 0;
+};
+
+BufferList.prototype.join = function (s) {
+  if (this.length === 0) return '';
+  var p = this.head;
+  var ret = '' + p.data;
+  while (p = p.next) {
+    ret += s + p.data;
+  }return ret;
+};
+
+BufferList.prototype.concat = function (n) {
+  if (this.length === 0) return bufferShim.alloc(0);
+  if (this.length === 1) return this.head.data;
+  var ret = bufferShim.allocUnsafe(n >>> 0);
+  var p = this.head;
+  var i = 0;
+  while (p) {
+    p.data.copy(ret, i);
+    i += p.data.length;
+    p = p.next;
+  }
+  return ret;
+};
+},{"buffer":5,"buffer-shims":4}],21:[function(require,module,exports){
+module.exports = require('events').EventEmitter;
+
+},{"events":7}],22:[function(require,module,exports){
+'use strict';
+
+var Buffer = require('buffer').Buffer;
+var bufferShim = require('buffer-shims');
+
+var isEncoding = Buffer.isEncoding || function (encoding) {
+  encoding = '' + encoding;
+  switch (encoding && encoding.toLowerCase()) {
+    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+      return true;
+    default:
+      return false;
+  }
+};
+
+function _normalizeEncoding(enc) {
+  if (!enc) return 'utf8';
+  var retried;
+  while (true) {
+    switch (enc) {
+      case 'utf8':
+      case 'utf-8':
+        return 'utf8';
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return 'utf16le';
+      case 'latin1':
+      case 'binary':
+        return 'latin1';
+      case 'base64':
+      case 'ascii':
+      case 'hex':
+        return enc;
+      default:
+        if (retried) return; // undefined
+        enc = ('' + enc).toLowerCase();
+        retried = true;
+    }
+  }
+};
+
+// Do not cache `Buffer.isEncoding` when checking encoding names as some
+// modules monkey-patch it to support additional encodings
+function normalizeEncoding(enc) {
+  var nenc = _normalizeEncoding(enc);
+  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
+  return nenc || enc;
+}
+
+// StringDecoder provides an interface for efficiently splitting a series of
+// buffers into a series of JS strings without breaking apart multi-byte
+// characters.
+exports.StringDecoder = StringDecoder;
+function StringDecoder(encoding) {
+  this.encoding = normalizeEncoding(encoding);
+  var nb;
+  switch (this.encoding) {
+    case 'utf16le':
+      this.text = utf16Text;
+      this.end = utf16End;
+      nb = 4;
+      break;
+    case 'utf8':
+      this.fillLast = utf8FillLast;
+      nb = 4;
+      break;
+    case 'base64':
+      this.text = base64Text;
+      this.end = base64End;
+      nb = 3;
+      break;
+    default:
+      this.write = simpleWrite;
+      this.end = simpleEnd;
+      return;
+  }
+  this.lastNeed = 0;
+  this.lastTotal = 0;
+  this.lastChar = bufferShim.allocUnsafe(nb);
+}
+
+StringDecoder.prototype.write = function (buf) {
+  if (buf.length === 0) return '';
+  var r;
+  var i;
+  if (this.lastNeed) {
+    r = this.fillLast(buf);
+    if (r === undefined) return '';
+    i = this.lastNeed;
+    this.lastNeed = 0;
+  } else {
+    i = 0;
+  }
+  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
+  return r || '';
+};
+
+StringDecoder.prototype.end = utf8End;
+
+// Returns only complete characters in a Buffer
+StringDecoder.prototype.text = utf8Text;
+
+// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+StringDecoder.prototype.fillLast = function (buf) {
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+  this.lastNeed -= buf.length;
+};
+
+// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+// continuation byte.
+function utf8CheckByte(byte) {
+  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
+  return -1;
+}
+
+// Checks at most 3 bytes at the end of a Buffer in order to detect an
+// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+// needed to complete the UTF-8 character (if applicable) are returned.
+function utf8CheckIncomplete(self, buf, i) {
+  var j = buf.length - 1;
+  if (j < i) return 0;
+  var nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 1;
+    return nb;
+  }
+  if (--j < i) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 2;
+    return nb;
+  }
+  if (--j < i) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) {
+      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
+    }
+    return nb;
+  }
+  return 0;
+}
+
+// Validates as many continuation bytes for a multi-byte UTF-8 character as
+// needed or are available. If we see a non-continuation byte where we expect
+// one, we "replace" the validated continuation bytes we've seen so far with
+// UTF-8 replacement characters ('\ufffd'), to match v8's UTF-8 decoding
+// behavior. The continuation byte check is included three times in the case
+// where all of the continuation bytes for a character exist in the same buffer.
+// It is also done this way as a slight performance increase instead of using a
+// loop.
+function utf8CheckExtraBytes(self, buf, p) {
+  if ((buf[0] & 0xC0) !== 0x80) {
+    self.lastNeed = 0;
+    return '\ufffd'.repeat(p);
+  }
+  if (self.lastNeed > 1 && buf.length > 1) {
+    if ((buf[1] & 0xC0) !== 0x80) {
+      self.lastNeed = 1;
+      return '\ufffd'.repeat(p + 1);
+    }
+    if (self.lastNeed > 2 && buf.length > 2) {
+      if ((buf[2] & 0xC0) !== 0x80) {
+        self.lastNeed = 2;
+        return '\ufffd'.repeat(p + 2);
+      }
+    }
+  }
+}
+
+// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+function utf8FillLast(buf) {
+  var p = this.lastTotal - this.lastNeed;
+  var r = utf8CheckExtraBytes(this, buf, p);
+  if (r !== undefined) return r;
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, p, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, p, 0, buf.length);
+  this.lastNeed -= buf.length;
+}
+
+// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+// partial character, the character's bytes are buffered until the required
+// number of bytes are available.
+function utf8Text(buf, i) {
+  var total = utf8CheckIncomplete(this, buf, i);
+  if (!this.lastNeed) return buf.toString('utf8', i);
+  this.lastTotal = total;
+  var end = buf.length - (total - this.lastNeed);
+  buf.copy(this.lastChar, 0, end);
+  return buf.toString('utf8', i, end);
+}
+
+// For UTF-8, a replacement character for each buffered byte of a (partial)
+// character needs to be added to the output.
+function utf8End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + '\ufffd'.repeat(this.lastTotal - this.lastNeed);
+  return r;
+}
+
+// UTF-16LE typically needs two bytes per character, but even if we have an even
+// number of bytes available, we need to check if we end on a leading/high
+// surrogate. In that case, we need to wait for the next two bytes in order to
+// decode the last character properly.
+function utf16Text(buf, i) {
+  if ((buf.length - i) % 2 === 0) {
+    var r = buf.toString('utf16le', i);
+    if (r) {
+      var c = r.charCodeAt(r.length - 1);
+      if (c >= 0xD800 && c <= 0xDBFF) {
+        this.lastNeed = 2;
+        this.lastTotal = 4;
+        this.lastChar[0] = buf[buf.length - 2];
+        this.lastChar[1] = buf[buf.length - 1];
+        return r.slice(0, -1);
+      }
+    }
+    return r;
+  }
+  this.lastNeed = 1;
+  this.lastTotal = 2;
+  this.lastChar[0] = buf[buf.length - 1];
+  return buf.toString('utf16le', i, buf.length - 1);
+}
+
+// For UTF-16LE we do not explicitly append special replacement characters if we
+// end on a partial character, we simply let v8 handle that.
+function utf16End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) {
+    var end = this.lastTotal - this.lastNeed;
+    return r + this.lastChar.toString('utf16le', 0, end);
+  }
+  return r;
+}
+
+function base64Text(buf, i) {
+  var n = (buf.length - i) % 3;
+  if (n === 0) return buf.toString('base64', i);
+  this.lastNeed = 3 - n;
+  this.lastTotal = 3;
+  if (n === 1) {
+    this.lastChar[0] = buf[buf.length - 1];
+  } else {
+    this.lastChar[0] = buf[buf.length - 2];
+    this.lastChar[1] = buf[buf.length - 1];
+  }
+  return buf.toString('base64', i, buf.length - n);
+}
+
+function base64End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+  return r;
+}
+
+// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+function simpleWrite(buf) {
+  return buf.toString(this.encoding);
+}
+
+function simpleEnd(buf) {
+  return buf && buf.length ? this.write(buf) : '';
+}
+},{"buffer":5,"buffer-shims":4}],23:[function(require,module,exports){
+module.exports = require('./readable').PassThrough
+
+},{"./readable":24}],24:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
-exports.Stream = Stream || exports;
+exports.Stream = exports;
 exports.Readable = exports;
 exports.Writable = require('./lib/_stream_writable.js');
 exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":14,"./lib/_stream_passthrough.js":15,"./lib/_stream_readable.js":16,"./lib/_stream_transform.js":17,"./lib/_stream_writable.js":18}],21:[function(require,module,exports){
-module.exports = require("./lib/_stream_transform.js")
+},{"./lib/_stream_duplex.js":15,"./lib/_stream_passthrough.js":16,"./lib/_stream_readable.js":17,"./lib/_stream_transform.js":18,"./lib/_stream_writable.js":19}],25:[function(require,module,exports){
+module.exports = require('./readable').Transform
 
-},{"./lib/_stream_transform.js":17}],22:[function(require,module,exports){
-module.exports = require("./lib/_stream_writable.js")
+},{"./readable":24}],26:[function(require,module,exports){
+module.exports = require('./lib/_stream_writable.js');
 
-},{"./lib/_stream_writable.js":18}],23:[function(require,module,exports){
+},{"./lib/_stream_writable.js":19}],27:[function(require,module,exports){
 (function (Buffer){
 ;(function (sax) { // wrapper for non-node envs
   sax.parser = function (strict, opt) { return new SAXParser(strict, opt) }
@@ -6338,7 +6449,7 @@ module.exports = require("./lib/_stream_writable.js")
 })(typeof exports === 'undefined' ? this.sax = {} : exports)
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":4,"stream":24,"string_decoder":25}],24:[function(require,module,exports){
+},{"buffer":5,"stream":28,"string_decoder":29}],28:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6467,7 +6578,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":6,"inherits":8,"readable-stream/duplex.js":13,"readable-stream/passthrough.js":19,"readable-stream/readable.js":20,"readable-stream/transform.js":21,"readable-stream/writable.js":22}],25:[function(require,module,exports){
+},{"events":7,"inherits":9,"readable-stream/duplex.js":14,"readable-stream/passthrough.js":23,"readable-stream/readable.js":24,"readable-stream/transform.js":25,"readable-stream/writable.js":26}],29:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6690,7 +6801,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":4}],26:[function(require,module,exports){
+},{"buffer":5}],30:[function(require,module,exports){
 (function (global){
 
 /**
@@ -6761,7 +6872,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],27:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 (function (process){
 /*jslint node:true */
 
@@ -6837,7 +6948,7 @@ module.exports = {
     }
 };
 }).call(this,require('_process'))
-},{"_process":12}],28:[function(require,module,exports){
+},{"_process":13}],32:[function(require,module,exports){
 /*jslint node:true */
 
 var xml2js = require('./xml2js');
@@ -6851,7 +6962,7 @@ module.exports = {
     js2xml: js2xml,
     json2xml: json2xml
 };
-},{"./js2xml":29,"./json2xml":30,"./xml2js":31,"./xml2json":32}],29:[function(require,module,exports){
+},{"./js2xml":33,"./json2xml":34,"./xml2js":35,"./xml2json":36}],33:[function(require,module,exports){
 var common = require('./common');
 
 function validateOptions (userOptions) {
@@ -6861,7 +6972,10 @@ function validateOptions (userOptions) {
     common.ensureFlagExists('ignoreText', options);
     common.ensureFlagExists('ignoreComment', options);
     common.ensureFlagExists('ignoreCdata', options);
+    common.ensureFlagExists('ignoreDoctype', options);
     common.ensureFlagExists('compact', options);
+    common.ensureFlagExists('indentText', options);
+    common.ensureFlagExists('indentCdata', options);
     common.ensureFlagExists('fullTagEmptyElement', options);
     common.ensureSpacesExists(options);
     if (typeof options.spaces === 'number') {
@@ -6872,6 +6986,7 @@ function validateOptions (userOptions) {
     common.ensureKeyExists('text', options);
     common.ensureKeyExists('comment', options);
     common.ensureKeyExists('cdata', options);
+    common.ensureKeyExists('doctype', options);
     common.ensureKeyExists('type', options);
     common.ensureKeyExists('name', options);
     common.ensureKeyExists('elements', options);
@@ -6896,16 +7011,47 @@ function writeDeclaration (declaration, options) {
     return '<?xml' + writeAttributes(declaration[options.attributesKey]) + '?>';
 }
 
-function writeComment (element, options) {
-    return options.ignoreComment ? '' : '<!--' + element[options.commentKey] + '-->';
+function writeComment (comment, options) {
+    return options.ignoreComment ? '' : '<!--' + comment + '-->';
 }
 
-function writeCdata (element, options) {
-    return options.ignoreCdata ? '' : '<![CDATA[' + element[options.cdataKey] + ']]>';
+function writeCdata (cdata, options) {
+    return options.ignoreCdata ? '' : '<![CDATA[' + cdata + ']]>';
 }
 
-function writeText (element, options) {
-    return options.ignoreText ? '' : element[options.textKey].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+function writeDoctype (doctype, options) {
+    return options.ignoreDoctype ? '' : '<!DOCTYPE ' + doctype + '>';
+}
+
+function writeText (text, options) {
+    return options.ignoreText ? '' : text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function hasContent (element, options) {
+    var i;
+    if (element.elements && element.elements.length) {
+        for (i = 0; i < element.elements.length; ++i) {
+            switch (element.elements[i][options.typeKey]) {
+                case 'text':
+                    if (options.indentText) {
+                        return true;
+                    }
+                    break; // skip to next key
+                case 'cdata':
+                    if (options.indentCdata) {
+                        return true;
+                    }
+                    break; // skip to next key
+                case 'doctype':
+                case 'comment':
+                case 'element':
+                    return true;
+                default:
+                    return true;
+            }
+        }
+    }
+    return false;
 }
 
 function writeElement (element, options, depth) {
@@ -6919,7 +7065,7 @@ function writeElement (element, options, depth) {
         if (element[options.elementsKey] && element[options.elementsKey].length) {
             xml += writeElements(element[options.elementsKey], options, depth + 1);
         }
-        xml += (options.spaces && element[options.elementsKey] && element[options.elementsKey].length && (element[options.elementsKey].length > 1 || element[options.elementsKey][0].type !== 'text') ? '\n' + Array(depth + 1).join(options.spaces) : '');
+        xml += options.spaces && hasContent(element, options) ? '\n' + Array(depth + 1).join(options.spaces) : '';
         xml += '</' + element.name + '>';
     } else {
         xml += '/>';
@@ -6928,31 +7074,37 @@ function writeElement (element, options, depth) {
 }
 
 function writeElements (elements, options, depth, firstLine) {
-    var indent = writeIndentation(options, depth, firstLine);
     return elements.reduce(function (xml, element) {
+        var indent = writeIndentation(options, depth, firstLine && !xml);
         switch (element.type) {
             case 'element': return xml + indent + writeElement(element, options, depth);
-            case 'comment': return xml + indent + writeComment(element, options);
-            case 'cdata': return xml + indent + writeCdata(element, options);
-            case 'text': return xml + writeText(element, options);
+            case 'comment': return xml + indent + writeComment(element[options.commentKey], options);
+            case 'doctype': return xml + indent + writeDoctype(element[options.doctypeKey], options);
+            case 'cdata': return xml + (options.indentCdata ? indent : '') + writeCdata(element[options.cdataKey], options);
+            case 'text': return xml + (options.indentText ? indent : '') + writeText(element[options.textKey], options);
         }
     }, '');
 }
 
-function hasContent (element, options, skipText) {
+function hasContentCompact (element, options, anyContent) {
     var key;
     for (key in element) {
         if (element.hasOwnProperty(key)) {
             switch (key) {
-                case options.textKey:
-                    if (!skipText) {
-                        return true;
-                    }
-                    break; // skip to next key
                 case options.parentKey:
                 case options.attributesKey:
                     break; // skip to next key
+                case options.textKey:
+                    if (options.indentText || anyContent) {
+                        return true;
+                    }
+                    break; // skip to next key
                 case options.cdataKey:
+                    if (options.indentCdata || anyContent) {
+                        return true;
+                    }
+                    break; // skip to next key
+                case options.doctypeKey:
                 case options.commentKey:
                 case options.declarationKey:
                     return true;
@@ -6971,7 +7123,7 @@ function writeElementCompact (element, name, options, depth, indent) {
         if (element[options.attributesKey]) {
             xml += writeAttributes(element[options.attributesKey]);
         }
-        if (options.fullTagEmptyElement || hasContent(element, options) || element[options.attributesKey] && element[options.attributesKey]['xml:space'] === 'preserve') {
+        if (options.fullTagEmptyElement || hasContentCompact(element, options, true) || element[options.attributesKey] && element[options.attributesKey]['xml:space'] === 'preserve') {
             xml += '>';
         } else {
             xml += '/>';
@@ -6986,25 +7138,22 @@ function writeElementCompact (element, name, options, depth, indent) {
 }
 
 function writeElementsCompact (element, options, depth, firstLine) {
-    var key, xml = '';
+    var i, key, nodes, xml = '';
     for (key in element) {
         if (element.hasOwnProperty(key)) {
-            switch (key) {
-                case options.declarationKey: xml += writeDeclaration(element[options.declarationKey], options); break;
-                case options.attributesKey: case options.parentKey: break; // skip
-                case options.textKey: xml += writeText(element, options); break;
-                case options.cdataKey: xml += writeIndentation(options, depth, firstLine) + writeCdata(element, options); break;
-                case options.commentKey: xml += writeIndentation(options, depth, firstLine) + writeComment(element, options); break;
-                default:
-                    if (element[key] instanceof Array) {
-                        element[key].forEach(function (el) {
-                            xml += writeIndentation(options, depth, firstLine) + writeElementCompact(el, key, options, depth, hasContent(el, options, true));
-                        });
-                    } else {
-                        xml += writeIndentation(options, depth, firstLine) + writeElementCompact(element[key], key, options, depth, hasContent(element[key], options, true));
-                    }
+            nodes = element[key] instanceof Array ? element[key] : [element[key]];
+            for (i = 0; i < nodes.length; ++i) {
+                switch (key) {
+                    case options.declarationKey: xml += writeDeclaration(nodes[i], options); break;
+                    case options.attributesKey: case options.parentKey: break; // skip
+                    case options.textKey: xml += (options.indentText ? writeIndentation(options, depth, firstLine) : '') + writeText(nodes[i], options); break;
+                    case options.cdataKey: xml += (options.indentCdata ? writeIndentation(options, depth, firstLine) : '') + writeCdata(nodes[i], options); break;
+                    case options.doctypeKey: xml += writeIndentation(options, depth, firstLine) + writeDoctype(nodes[i], options); break;
+                    case options.commentKey: xml += writeIndentation(options, depth, firstLine) + writeComment(nodes[i], options); break;
+                    default: xml += writeIndentation(options, depth, firstLine) + writeElementCompact(nodes[i], key, options, depth, hasContentCompact(nodes[i], options));
+                }
+                firstLine = firstLine && !xml;
             }
-            firstLine = firstLine && !xml;
         }
     }
     return xml;
@@ -7026,7 +7175,8 @@ module.exports = function (js, options) {
     }
     return xml;
 };
-},{"./common":27}],30:[function(require,module,exports){
+
+},{"./common":31}],34:[function(require,module,exports){
 (function (Buffer){
 var js2xml = require('./js2xml.js');
 
@@ -7048,7 +7198,7 @@ module.exports = function (json, options) {
     return js2xml(js, options);
 };
 }).call(this,require("buffer").Buffer)
-},{"./js2xml.js":29,"buffer":4}],31:[function(require,module,exports){
+},{"./js2xml.js":33,"buffer":5}],35:[function(require,module,exports){
 var sax = require('sax');
 var expat /*= require('node-expat');*/ = {on: function () {}, parse: function () {}};
 var common = require('./common');
@@ -7064,7 +7214,9 @@ function validateOptions (userOptions) {
     common.ensureFlagExists('ignoreText', options);
     common.ensureFlagExists('ignoreComment', options);
     common.ensureFlagExists('ignoreCdata', options);
+    common.ensureFlagExists('ignoreDoctype', options);
     common.ensureFlagExists('compact', options);
+    common.ensureFlagExists('alwaysArray', options);
     common.ensureFlagExists('alwaysChildren', options);
     common.ensureFlagExists('addParent', options);
     common.ensureFlagExists('trim', options);
@@ -7075,6 +7227,7 @@ function validateOptions (userOptions) {
     common.ensureKeyExists('text', options);
     common.ensureKeyExists('comment', options);
     common.ensureKeyExists('cdata', options);
+    common.ensureKeyExists('doctype', options);
     common.ensureKeyExists('type', options);
     common.ensureKeyExists('name', options);
     common.ensureKeyExists('elements', options);
@@ -7098,7 +7251,17 @@ function nativeType (value) {
 
 function addField (type, value, options) {
     if (options.compact) {
-        currentElement[options[type + 'Key']] = (currentElement[options[type + 'Key']] ? currentElement[options[type + 'Key']] + '\n' : '') + value;
+        if (!currentElement[options[type + 'Key']] && options.alwaysArray) {
+            currentElement[options[type + 'Key']] = [];
+        }
+        if (currentElement[options[type + 'Key']] && !(currentElement[options[type + 'Key']] instanceof Array)) {
+            currentElement[options[type + 'Key']] = [currentElement[options[type + 'Key']]];
+        }
+        if (currentElement[options[type + 'Key']] instanceof Array) {
+            currentElement[options[type + 'Key']].push(value);
+        } else {
+            currentElement[options[type + 'Key']] = value;
+        }
     } else {
         if (!currentElement[options.elementsKey]) {
             currentElement[options.elementsKey] = [];
@@ -7161,15 +7324,17 @@ function onStartElement (name, attributes) {
             }
         }
         element[options.parentKey] = currentElement;
-        if (!(name in currentElement)) {
-            currentElement[name] = element;
-        } else {
-            if (!(currentElement[name] instanceof Array)) {
-                currentElement[name] = [currentElement[name]];
-            }
-            currentElement[name].push(element);
+        if (!(name in currentElement) && options.alwaysArray) {
+            currentElement[name] = [];
         }
-        currentElement = element;
+        if (currentElement[name] && !(currentElement[name] instanceof Array)) {
+            currentElement[name] = [currentElement[name]];
+        }
+        if (currentElement[name] instanceof Array) {
+            currentElement[name].push(element);
+        } else {
+            currentElement[name] = element;
+        }
     } else {
         if (!currentElement[options.elementsKey]) {
             currentElement[options.elementsKey] = [];
@@ -7185,12 +7350,11 @@ function onStartElement (name, attributes) {
             element[options.elementsKey] = [];
         }
         currentElement[options.elementsKey].push(element);
-        currentElement = element;
     }
+    currentElement = element;
 }
 
 function onText (text) {
-    //console.log('currentElement:', currentElement);
     if (options.ignoreText) {
         return;
     }
@@ -7240,18 +7404,29 @@ function onCdata (cdata) {
     addField('cdata', cdata, options);
 }
 
+function onDoctype (doctype) {
+    if (options.ignoreDoctype) {
+        return;
+    }
+    doctype = doctype.replace(/^ /, '');
+    if (options.trim) {
+        doctype = doctype.trim();
+    }
+    addField('doctype', doctype, options);
+}
+
 function onError (error) {
     error.note = error; //console.error(error);
 }
 
 module.exports = function (xml, userOptions) {
-    
+
     var parser = pureJsParser ? sax.parser(true, {}) : parser = new expat.Parser('UTF-8');
     var result = {};
     currentElement = result;
-    
+
     options = validateOptions(userOptions);
-    
+
     if (pureJsParser) {
         parser.onopentag = onStartElement;
         parser.ontext = onText;
@@ -7259,6 +7434,7 @@ module.exports = function (xml, userOptions) {
         parser.onclosetag = onEndElement;
         parser.onerror = onError;
         parser.oncdata = onCdata;
+        parser.ondoctype = onDoctype;
         parser.onprocessinginstruction = onDeclaration;
     } else {
         parser.on('startElement', onStartElement);
@@ -7270,7 +7446,7 @@ module.exports = function (xml, userOptions) {
         //parser.on('endCdata', onEndCdata);
         //parser.on('entityDecl', onEntityDecl);
     }
-    
+
     if (pureJsParser) {
         parser.write(xml).close();
     } else {
@@ -7278,18 +7454,19 @@ module.exports = function (xml, userOptions) {
             throw new Error('XML parsing error: ' + parser.getError());
         }
     }
-    
+
     if (result[options.elementsKey]) {
         var temp = result[options.elementsKey];
         delete result[options.elementsKey];
         result[options.elementsKey] = temp;
         delete result.text;
     }
-    
+
     return result;
 
 };
-},{"./common":27,"sax":23}],32:[function(require,module,exports){
+
+},{"./common":31,"sax":27}],36:[function(require,module,exports){
 var common = require('./common');
 var xml2js = require('./xml2js');
 
@@ -7312,5 +7489,447 @@ module.exports = function(xml, userOptions) {
     }
     return json.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 };
-},{"./common":27,"./xml2js":31}]},{},[1])(1)
+},{"./common":31,"./xml2js":35}],37:[function(require,module,exports){
+const convert = require('xml-js')
+const utils = require('./utils')
+const range = utils.range
+const normalize = utils.normalize
+const clean = utils.clean
+
+// Default Values
+const MINZOOM = 0
+const MAXZOOM = 20
+const SPACES = 2
+const BBOX = [-180, -85, 180, 85]
+
+/**
+ * Get Capabilities
+ *
+ * @param {Options} options Options
+ * @param {string} options.url URL of WMTS service
+ * @param {string} options.title Title of service
+ * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
+ * @param {number} [options.minzoom=0] Minimum zoom level
+ * @param {number} [options.maxzoom=22] Maximum zoom level
+ * @param {string} [options.accessConstraints] Access Constraints
+ * @param {string} [options.fees] Fees
+ * @param {string} [options.abstract] Abstract
+ * @param {string} [options.identifier] Identifier
+ * @param {string[]} [options.keywords] Keywords
+ * @param {BBox} [options.bbox] BBox [west, south, east, north]
+ * @param {number} [options.spaces=2] Spaces created for XML output
+ * @returns {string} XML string
+ * @example
+ * const xml = wmts.getCapabilities({
+ *   url: 'http://localhost:5000/WMTS',
+ *   title: 'Tile Service XYZ',
+ *   identifier: 'service-123',
+ *   abstract: '© OSM data',
+ *   keyword: ['world', 'imagery', 'wmts'],
+ *   format: 'png',
+ *   minzoom: 10,
+ *   maxzoom: 18,
+ *   bbox: [-180, -85, 180, 85]
+ * })
+ */
+function getCapabilities (options) {
+  options = options || {}
+
+  // Define Options
+  const spaces = options.spaces || SPACES
+
+  // XML header
+  const _declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
+
+  // Define JSON
+  const json = {
+    _declaration: _declaration,
+    Capabilities: Capabilities(options).Capabilities
+  }
+  const xml = convert.js2xml(json, { compact: true, spaces: spaces })
+  return xml
+}
+
+/**
+ * Capabilities JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @param {string} options.url URL of WMTS service
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Capabilities({
+ *   url: 'http://localhost:5000'
+ * })
+ */
+function Capabilities (options) {
+  options = options || {}
+
+  // Required options
+  const url = normalize(options.url)
+  if (!url) throw new Error('<url> is required')
+
+  return {
+    Capabilities: Object.assign({
+      _attributes: {
+        xmlns: 'http://www.opengis.net/wmts/1.0',
+        'xmlns:ows': 'http://www.opengis.net/ows/1.1',
+        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+        'xmlns:gml': 'http://www.opengis.net/gml',
+        'xsi:schemaLocation': 'http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd',
+        version: '1.0.0'
+      }
+    },
+      ServiceIdentification(options),
+      OperationsMetadata(url),
+      Contents(options),
+      {ServiceMetadataURL: {_attributes: { 'xlink:href': url + '/1.0.0/WMTSCapabilities.xml' }}}
+    )
+  }
+}
+
+/**
+ * GoogleMapsCompatible JSON scheme
+ *
+ * @private
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * wmts.GoogleMapsCompatible(10, 17)
+ */
+function GoogleMapsCompatible (minzoom, maxzoom) {
+  minzoom = (minzoom !== undefined) ? minzoom : MINZOOM
+  maxzoom = (maxzoom !== undefined) ? maxzoom : MAXZOOM
+  return {
+    TileMatrixSet: {
+      'ows:Title': {_text: 'GoogleMapsCompatible'},
+      'ows:Abstract': {_text: "the wellknown 'GoogleMapsCompatible' tile matrix set defined by OGC WMTS specification"},
+      'ows:Identifier': {_text: 'GoogleMapsCompatible'},
+      'ows:SupportedCRS': {_text: 'urn:ogc:def:crs:EPSG:6.18.3:3857'},
+      WellKnownScaleSet: {_text: 'urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible'},
+      TileMatrix: TileMatrix(minzoom, maxzoom).TileMatrix
+    }
+  }
+}
+
+/**
+ * TileMatrix JSON scheme
+ *
+ * @private
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * wmts.TileMatrix(0, 18)
+ */
+function TileMatrix (minzoom, maxzoom) {
+  minzoom = (minzoom !== undefined) ? minzoom : MINZOOM
+  maxzoom = (maxzoom !== undefined) ? maxzoom : MAXZOOM
+  const TileMatrix = range(minzoom, maxzoom + 1).map(function (zoom) {
+    const matrix = Math.pow(2, zoom)
+    const ScaleDenominator = 559082264.0287178 / matrix
+    return {
+      'ows:Identifier': {_text: String(zoom)},
+      ScaleDenominator: {_text: String(ScaleDenominator)},
+      TopLeftCorner: {_text: '-20037508.34278925 20037508.34278925'},
+      TileWidth: {_text: '256'},
+      TileHeight: {_text: '256'},
+      MatrixWidth: {_text: String(matrix)},
+      MatrixHeight: {_text: String(matrix)}
+    }
+  })
+  return {TileMatrix: TileMatrix}
+}
+
+/**
+ * ServiceIdentification JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @param {string} options.title Title of service
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * ServiceIdentification({
+ *   title: 'Service name',
+ *   abstract: 'A long description of this service',
+ *   keywords: ['world', 'wmts', 'imagery']
+ * })
+ */
+function ServiceIdentification (options) {
+  options = options || {}
+
+  // Required options
+  const title = options.title
+  if (!title) throw new Error('<title> required')
+
+  // Optional options
+  // const abstract = options.abstract
+  // const accessConstraints = options.accessConstraints
+  // const fees = options.fees
+  // const keywords = options.keywords
+
+  return clean({
+    'ows:ServiceIdentification': {
+      'ows:Title': {_text: title},
+      'ows:ServiceType': {_text: 'OGC WMTS'},
+      'ows:ServiceTypeVersion': {_text: '1.0.0'}
+    }
+  })
+}
+
+/**
+ * Keywords JSON scheme
+ *
+ * @private
+ * @param {string[]} [keywords]
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Keywords(['world', 'imagery', 'wmts'])
+ */
+function Keywords (keywords) {
+  keywords = keywords || []
+  return {
+    'ows:Keywords': {
+      'ows:Keyword': keywords.map(function (keyword) { return {_text: String(keyword)} })
+    }
+  }
+}
+
+/**
+ * OperationsMetadata JSON scheme
+ *
+ * @private
+ * @param {string} url URL of Service Provider
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * OperationsMetadata('http://localhost:5000/wmts')
+ */
+function OperationsMetadata (url) {
+  url = normalize(url)
+  if (!url) throw new Error('<url> is required')
+  return {
+    'ows:OperationsMetadata': {
+      'ows:Operation': [
+        Operation('GetCapabilities', url + '/1.0.0/WMTSCapabilities.xml', url + '?')['ows:Operation'],
+        Operation('GetTile', url + '/tile/1.0.0/', url + '?')['ows:Operation']
+      ]
+    }
+  }
+}
+
+/**
+ * Operation JSON scheme
+ *
+ * @private
+ * @param {string} operation Name of operation
+ * @param {string} restful URL for RESTful
+ * @param {string} kvp URL for KVP
+ * @returns {ElementCompact} JSON scheme
+ */
+function Operation (operation, restful, kvp) {
+  return {
+    'ows:Operation': {_attributes: {name: operation},
+      'ows:DCP': {
+        'ows:HTTP': {
+          'ows:Get': [Get(restful, 'RESTful')['ows:Get'], Get(kvp, 'KVP')['ows:Get']]
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get JSON scheme
+ *
+ * @private
+ * @param {string} url URL of Service Provider
+ * @param {string} value Type of Get 'RESTful' | 'KVP'
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Get()
+ * //= Get > Constraint > AllowedValues> Value
+ */
+function Get (url, value) {
+  return {
+    'ows:Get': {_attributes: {'xlink:href': url},
+      'ows:Constraint': {_attributes: {name: 'GetEncoding'}},
+      'ows:AllowedValues': {
+        'ows:Value': {_text: value}
+      }
+    }
+  }
+}
+
+/**
+ * Capabilities.Contents JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @returns {Element}
+ * @example
+ * Contents()
+ * //= Contents > [Layer, TileMatrixSet, TileMatrixSet]
+ */
+function Contents (options) {
+  options = options || {}
+
+  return {
+    Contents: {
+      Layer: Layer(options).Layer,
+      TileMatrixSet: GoogleMapsCompatible(options.minzoom, options.maxzoom).TileMatrixSet
+    }
+  }
+}
+
+/**
+ * Capabilities.Contents.Layer JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @param {string} options.title Title
+ * @param {string} options.url URL
+ * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
+ * @param {string} [options.abstract] Abstract
+ * @param {string} [options.identifier] Identifier
+ * @param {BBox} [options.bbox=[-180, -85, 180, 85]] BBox [west, south, east, north]
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Layer({
+ *   title: 'Tile Service'
+ *   url: 'http://localhost:5000/wmts'
+ *   format: 'jpg'
+ * })
+ */
+function Layer (options) {
+  options = options || {}
+
+  // Catch errors
+  if (options.title === undefined) throw new Error('<title> is required')
+  if (options.url === undefined) throw new Error('<url> is required')
+  if (options.format === undefined) throw new Error('<format> is required')
+
+  // Required options
+  const title = options.title
+  const url = options.url
+  const format = (options.format === 'jpg') ? 'jpeg' : options.format
+
+  // Optional options
+  const abstract = options.abstract
+  const identifier = options.identifier || title
+  const bbox = options.bbox || BBOX
+
+  // Derived Variables
+  const contentType = 'image/' + format
+  const southwest = bbox.slice(0, 2)
+  const northeast = bbox.slice(2, 4)
+  const template = url + '/tile/1.0.0/' + identifier + '/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}'
+
+  return clean({
+    Layer: {
+      'ows:Title': { _text: title },
+      'ows:Identifier': identifier ? { _text: identifier } : { _text: title },
+      'ows:Abstract': abstract ? { _text: abstract } : undefined,
+      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
+        'ows:LowerCorner': { _text: southwest.join(' ') },
+        'ows:UpperCorner': { _text: northeast.join(' ') }
+      },
+      Style: { _attributes: { isDefault: 'true' },
+        'ows:Title': { _text: 'Default Style' },
+        'ows:Identifier': { _text: 'default' }
+      },
+      Format: { _text: contentType },
+      TileMatrixSetLink: {
+        TileMatrixSet: { _text: 'GoogleMapsCompatible' }
+      },
+      ResourceURL: {_attributes: { format: contentType, resourceType: 'tile', template: template }}
+    }
+  })
+}
+
+module.exports = {
+  getCapabilities: getCapabilities,
+  Capabilities: Capabilities,
+  GoogleMapsCompatible: GoogleMapsCompatible,
+  TileMatrix: TileMatrix,
+  ServiceIdentification: ServiceIdentification,
+  Keywords: Keywords,
+  OperationsMetadata: OperationsMetadata,
+  Operation: Operation,
+  Get: Get,
+  Contents: Contents,
+  Layer: Layer
+}
+
+},{"./utils":38,"xml-js":32}],38:[function(require,module,exports){
+/**
+ * Clean remove undefined attributes from object
+ *
+ * @private
+ * @param {Object} obj JSON object
+ * @returns {Object} clean JSON object
+ * @example
+ * clean({foo: undefined, bar: 123})
+ * //={bar: 123}
+ * clean({foo: 0, bar: 'a'})
+ * //={foo: 0, bar: 'a'}
+ */
+function clean (obj) {
+  return JSON.parse(JSON.stringify(obj))
+}
+
+/**
+ * Normalize URL
+ *
+ * @private
+ * @param {string} url
+ * @returns {string} Normalized URL
+ * @example
+ * normalize('http://localhost:5000')
+ * //=http://localhost:5000/
+ */
+function normalize (url) {
+  return url && url.replace(/$\//, '')
+}
+
+/**
+ * Generate an integer Array containing an arithmetic progression.
+ *
+ * @private
+ * @param {number} [start=0] Start
+ * @param {number} stop Stop
+ * @param {number} [step=1] Step
+ * @returns {number[]} range
+ * @example
+ * mercator.range(3)
+ * //=[ 0, 1, 2 ]
+ * mercator.range(3, 6)
+ * //=[ 3, 4, 5 ]
+ * mercator.range(6, 3, -1)
+ * //=[ 6, 5, 4 ]
+ */
+function range (start, stop, step) {
+  if (stop == null) {
+    stop = start || 0
+    start = 0
+  }
+  if (!step) {
+    step = stop < start ? -1 : 1
+  }
+  var length = Math.max(Math.ceil((stop - start) / step), 0)
+  var range = Array(length)
+  for (var idx = 0; idx < length; idx++, start += step) {
+    range[idx] = start
+  }
+  return range
+}
+
+module.exports = {
+  clean: clean,
+  normalize: normalize,
+  range: range
+}
+
+},{}]},{},[1])(1)
 });

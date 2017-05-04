@@ -1,5 +1,4 @@
-<ows:ServiceIdentification>
-  <ows:Title>Tile Service</ows:Title>
-  <ows:ServiceType>OGC WMTS</ows:ServiceType>
-  <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
-</ows:ServiceIdentification>
+<ows:Keywords>
+  <ows:Keyword>foo</ows:Keyword>
+  <ows:Keyword>bar</ows:Keyword>
+</ows:Keywords>

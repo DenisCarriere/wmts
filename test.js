@@ -1,8 +1,9 @@
-const convert = require('xml-js')
-const path = require('path')
 const fs = require('fs')
-const test = require('tape')
-const wmts = require('./')
+const path = require('path')
+const {test} = require('tap')
+const convert = require('xml-js')
+const utils = require('./src/utils')
+const getCapabilities = require('./src/getCapabilities')
 
 // Variables
 const title = 'Tile Service'
@@ -41,21 +42,27 @@ function compare (t, data, fixture) {
 }
 
 test('wmts.getCapabilities', t => {
-  compare(t, wmts.getCapabilities(options), 'WMTSCapabilities.xml')
-  compare(t, wmts.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml')
-  compare(t, wmts.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml')
-  compare(t, wmts.ServiceIdentification({title}), 'ServiceIdentification.xml')
-  compare(t, wmts.ServiceIdentification({title, keywords}), 'Keywords.xml')
-  compare(t, wmts.Contents(options), 'Contents.xml')
-  compare(t, wmts.OperationsMetadata(url), 'OperationsMetadata.xml')
-  compare(t, wmts.Layer(options), 'Layer.xml')
-  t.throws(() => wmts.getCapabilities('invalid'))
+  compare(t, getCapabilities.getCapabilities(options), 'WMTSCapabilities.xml')
+  compare(t, getCapabilities.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml')
+  compare(t, getCapabilities.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml')
+  compare(t, getCapabilities.ServiceIdentification(options), 'ServiceIdentification.xml')
+  compare(t, getCapabilities.Contents(options), 'Contents.xml')
+  compare(t, getCapabilities.OperationsMetadata(url), 'OperationsMetadata.xml')
+  compare(t, getCapabilities.Layer(options), 'Layer.xml')
+  compare(t, getCapabilities.Keywords(['foo', 'bar']), 'Keywords.xml')
+  t.throws(() => getCapabilities.getCapabilities())
+  t.throws(() => getCapabilities.getCapabilities({url}))
+  t.throws(() => getCapabilities.getCapabilities({url, title}))
   t.end()
 })
 
 test('wmts.utils', t => {
-  t.deepEqual(wmts.clean({foo: 10, bar: undefined}), {foo: 10})
-  t.deepEqual(wmts.clean({foo: undefined, bar: undefined}), {})
-  t.deepEqual(wmts.clean({foo: 0}), {foo: 0})
+  t.deepEqual(utils.clean({foo: 10, bar: undefined}), {foo: 10})
+  t.deepEqual(utils.clean({foo: undefined, bar: undefined}), {})
+  t.deepEqual(utils.clean({foo: 0}), {foo: 0})
+  t.deepEqual(utils.range(0, 3), [0, 1, 2])
+  t.deepEqual(utils.range(3), [0, 1, 2])
+  t.deepEqual(utils.range(3, 0), [3, 2, 1])
+  t.deepEqual(utils.range(0, 5, 2), [0, 2, 4])
   t.end()
 })

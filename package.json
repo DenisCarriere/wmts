@@ -10,7 +10,8 @@
     "docs"
   ],
   "scripts": {
-    "test": "node test.js",
+    "test": "tap test.js --cov",
+    "report": "tap test.js --cov --coverage-report=lcov",
     "bench": "node bench.js",
     "lint": "standard index.js",
     "docs": "documentation readme index.js --shallow --section=API",
@@ -34,10 +35,11 @@
     "browserify": "^14.3.0",
     "documentation": "^4.0.0-beta.19",
     "standard": "^8.6.0",
+    "tap": "^10.3.2",
     "tape": "^4.6.3",
     "uglifyjs": "^2.4.10"
   },
   "dependencies": {
-    "xml-js": "^1.0.2"
+    "xml-js": "^1.2.2"
   }
 }

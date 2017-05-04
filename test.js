@@ -1,6 +1,6 @@
 const fs = require('fs')
 const path = require('path')
-const {test} = require('tap')
+const test = require('tape')
 const convert = require('xml-js')
 const utils = require('./src/utils')
 const getCapabilities = require('./src/getCapabilities')
@@ -43,7 +43,7 @@ function compare (t, data, fixture) {
 }
 
 test('wmts.parseCapabilities - ArcGIS Online', t => {
-  const xml = fs.readFileSync(path.join(__dirname, 'examples', 'ArcGIS-online.xml'), 'utf8')
+  const xml = fs.readFileSync(path.join(__dirname, 'test', 'samples', 'ArcGIS-online.xml'), 'utf8')
   const results = parseCapabilities(xml)
   t.equal(results.title, 'World_Imagery', 'title')
   t.equal(results.identifier, 'World_Imagery', 'identifier')

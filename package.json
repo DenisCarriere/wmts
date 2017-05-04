@@ -1,23 +1,17 @@
 {
   "name": "wmts",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
     "index.js",
     "index.d.ts",
-    "docs"
+    "src"
   ],
   "scripts": {
-    "test": "tap test.js --cov",
-    "report": "tap test.js --cov --coverage-report=lcov",
-    "bench": "node bench.js",
-    "lint": "standard index.js",
-    "docs": "documentation readme index.js --shallow --section=API",
-    "build": "npm run browserify && npm run uglify",
-    "browserify": "browserify index.js -s wmts > docs/wmts.js",
-    "uglify": "uglifyjs docs/wmts.js -c -m > docs/wmts.min.js"
+    "test": "tape test.js",
+    "lint": "standard"
   },
   "author": "Denis Carriere <@DenisCarriere>",
   "license": "MIT",
@@ -32,12 +26,8 @@
     "scheme"
   ],
   "devDependencies": {
-    "browserify": "^14.3.0",
-    "documentation": "^4.0.0-beta.19",
     "standard": "^8.6.0",
-    "tap": "^10.3.2",
-    "tape": "^4.6.3",
-    "uglifyjs": "^2.4.10"
+    "tape": "^4.6.3"
   },
   "dependencies": {
     "xml-js": "^1.2.2"

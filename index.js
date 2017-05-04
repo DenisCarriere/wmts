@@ -1,3 +1,7 @@
+const parseCapabilities = require('./src/parseCapabilities')
+const getCapabilities = require('./src/getCapabilities')
+
 module.exports = {
-  getCapabilities: require('./src/getCapabilities')
+  parseCapabilities: parseCapabilities,
+  getCapabilities: getCapabilities.getCapabilities
 }

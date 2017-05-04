@@ -4,6 +4,7 @@ const {test} = require('tap')
 const convert = require('xml-js')
 const utils = require('./src/utils')
 const getCapabilities = require('./src/getCapabilities')
+const parseCapabilities = require('./src/parseCapabilities')
 
 // Variables
 const title = 'Tile Service'
@@ -34,12 +35,22 @@ const options = {
  * @param {string} fixture
  */
 function compare (t, data, fixture) {
-  var fullpath = path.join(__dirname, 'fixtures', fixture)
+  var fullpath = path.join(__dirname, 'test', fixture)
   let xml = data
   if (typeof (data) !== 'string') { xml = convert.js2xml(data, {compact: true, spaces}) }
   if (process.env.REGEN) { fs.writeFileSync(fullpath, xml, 'utf-8') }
   t.equal(xml, fs.readFileSync(fullpath, 'utf-8'), fixture)
 }
+
+test('wmts.parseCapabilities - ArcGIS Online', t => {
+  const xml = fs.readFileSync(path.join(__dirname, 'examples', 'ArcGIS-online.xml'), 'utf8')
+  const results = parseCapabilities(xml)
+  t.equal(results.title, 'World_Imagery', 'title')
+  t.equal(results.identifier, 'World_Imagery', 'identifier')
+  t.equal(results.url, 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/tile/1.0.0/World_Imagery/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg', 'url')
+  t.equal(results.format, 'jpeg', 'format')
+  t.end()
+})
 
 test('wmts.getCapabilities', t => {
   compare(t, getCapabilities.getCapabilities(options), 'WMTSCapabilities.xml')

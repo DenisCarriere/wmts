@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.0 - 2017-06-16
+
+- Add Mercator Bounding Box
+
 ## 1.7.0 - 2017-05-04
 
 - Add `parseCababilities` method to extract JSON from XML

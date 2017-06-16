@@ -1,6 +1,6 @@
 {
   "name": "wmts",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",
@@ -30,6 +30,8 @@
     "tape": "^4.6.3"
   },
   "dependencies": {
+    "global-mercator": "^2.7.0",
+    "wmts": "^1.7.2",
     "xml-js": "^1.2.2"
   }
 }

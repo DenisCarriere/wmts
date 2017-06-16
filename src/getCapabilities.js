@@ -1,5 +1,6 @@
 const convert = require('xml-js')
 const utils = require('./utils')
+const mercator = require('global-mercator')
 const range = utils.range
 const normalize = utils.normalize
 const clean = utils.clean
@@ -303,11 +304,14 @@ function Layer (options) {
   const abstract = options.abstract
   const identifier = options.identifier || title
   const bbox = options.bbox || BBOX
+  const bboxMeters = mercator.bboxToMeters(bbox)
 
   // Derived Variables
   const contentType = 'image/' + format
   const southwest = bbox.slice(0, 2)
   const northeast = bbox.slice(2, 4)
+  const southwestMeters = bboxMeters.slice(0, 2)
+  const northeastMeters = bboxMeters.slice(2, 4)
   const template = url + '/tile/1.0.0/' + identifier + '/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}'
 
   return clean({
@@ -315,9 +319,13 @@ function Layer (options) {
       'ows:Title': { _text: title },
       'ows:Identifier': { _text: identifier },
       'ows:Abstract': abstract ? { _text: abstract } : undefined,
-      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
+      'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
         'ows:LowerCorner': { _text: southwest.join(' ') },
         'ows:UpperCorner': { _text: northeast.join(' ') }
+      },
+      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
+        'ows:LowerCorner': { _text: southwestMeters.join(' ') },
+        'ows:UpperCorner': { _text: northeastMeters.join(' ') }
       },
       Style: { _attributes: { isDefault: 'true' },
         'ows:Title': { _text: 'Default Style' },

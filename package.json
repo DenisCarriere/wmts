@@ -1,6 +1,6 @@
 {
   "name": "wmts",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",

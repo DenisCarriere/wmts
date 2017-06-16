@@ -320,12 +320,12 @@ function Layer (options) {
       'ows:Identifier': { _text: identifier },
       'ows:Abstract': abstract ? { _text: abstract } : undefined,
       'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
-        'ows:LowerCorner': { _text: southwest.join(' ') },
-        'ows:UpperCorner': { _text: northeast.join(' ') }
-      },
-      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
         'ows:LowerCorner': { _text: southwestMeters.join(' ') },
         'ows:UpperCorner': { _text: northeastMeters.join(' ') }
+      },
+      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
+        'ows:LowerCorner': { _text: southwest.join(' ') },
+        'ows:UpperCorner': { _text: northeast.join(' ') }
       },
       Style: { _attributes: { isDefault: 'true' },
         'ows:Title': { _text: 'Default Style' },

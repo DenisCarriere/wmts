@@ -1,75 +1,43 @@
 const fs = require('fs')
 const path = require('path')
 const test = require('tape')
-const convert = require('xml-js')
-const utils = require('./src/utils')
-const getCapabilities = require('./src/getCapabilities')
-const parseCapabilities = require('./src/parseCapabilities')
+const wmts = require('./src/wmts')
 
-// Variables
-const title = 'Tile Service'
-const abstract = '© OSM data'
-const minzoom = 10
-const maxzoom = 18
-const url = 'http://localhost:80/WMTS'
-const keywords = ['world', 'imagery', 'wmts']
-const format = 'jpg'
-const bbox = [-180, -85, 180, 85]
-const spaces = 2
-const options = {
-  title,
-  spaces,
-  abstract,
-  minzoom,
-  maxzoom,
-  bbox,
-  url,
-  keywords,
-  format
-}
+const arcgis = fs.readFileSync(path.join(__dirname, 'test', 'in', 'ArcGIS-online.xml'), 'utf8')
+const mapbox = fs.readFileSync(path.join(__dirname, 'test', 'in', 'MapboxStudio.xml'), 'utf8')
 
-/**
- * Jest compare helper
- *
- * @param {ElementCompact} json
- * @param {string} fixture
- */
-function compare (t, data, fixture) {
-  const fullpath = path.join(__dirname, 'test', fixture)
-  var xml = data
-  if (typeof (data) !== 'string') { xml = convert.js2xml(data, {compact: true, spaces}) }
-  if (process.env.REGEN) { fs.writeFileSync(fullpath, xml, 'utf-8') }
-  t.equal(xml, fs.readFileSync(fullpath, 'utf-8'), fixture)
-}
+test('wmts -- ArcGIS Online', t => {
+  const metadata = wmts(arcgis)
+  // Service
+  t.equal(metadata.service.type, 'OGC WMTS')
+  t.equal(metadata.service.version, '1.0.0')
+  t.equal(metadata.service.title, 'World_Imagery')
 
-test('wmts.parseCapabilities - ArcGIS Online', t => {
-  const xml = fs.readFileSync(path.join(__dirname, 'test', 'samples', 'ArcGIS-online.xml'), 'utf8')
-  const results = parseCapabilities(xml)
-  t.equal(results.title, 'World_Imagery', 'title')
-  t.equal(results.identifier, 'World_Imagery', 'identifier')
-  t.equal(results.url, 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/tile/1.0.0/World_Imagery/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.jpg', 'url')
-  t.equal(results.format, 'jpeg', 'format')
+  // Layer
+  t.equal(metadata.layer.title, 'World_Imagery')
+  t.equal(metadata.layer.identifier, 'World_Imagery')
+  t.equal(metadata.layer.abstract, '')
+  t.equal(metadata.layer.format, 'image/jpeg')
+  t.equal(metadata.layer.minzoom, 0)
+  t.equal(metadata.layer.maxzoom, 23)
+  t.deepEqual(metadata.layer.bbox, [-179.99999000000003, -85.00000000000003, 179.99999000000003, 85.0])
   t.end()
 })
 
-test('wmts.getCapabilities', t => {
-  compare(t, getCapabilities.getCapabilities(options), 'WMTSCapabilities.xml')
-  compare(t, getCapabilities.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml')
-  compare(t, getCapabilities.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml')
-  compare(t, getCapabilities.ServiceIdentification(options), 'ServiceIdentification.xml')
-  compare(t, getCapabilities.Contents(options), 'Contents.xml')
-  compare(t, getCapabilities.OperationsMetadata(url), 'OperationsMetadata.xml')
-  compare(t, getCapabilities.Layer(options), 'Layer.xml')
-  compare(t, getCapabilities.Keywords(['foo', 'bar']), 'Keywords.xml')
-  t.throws(() => getCapabilities.getCapabilities())
-  t.throws(() => getCapabilities.getCapabilities({url}))
-  t.throws(() => getCapabilities.getCapabilities({url, title}))
-  t.end()
-})
+test('wmts -- Mapbox Studio', t => {
+  const metadata = wmts(mapbox)
+  // Service
+  t.equal(metadata.service.type, 'OGC WMTS')
+  t.equal(metadata.service.version, '1.0.0')
+  t.equal(metadata.service.title, 'Mapbox')
 
-test('wmts.utils', t => {
-  t.deepEqual(utils.clean({foo: 10, bar: undefined}), {foo: 10})
-  t.deepEqual(utils.clean({foo: undefined, bar: undefined}), {})
-  t.deepEqual(utils.clean({foo: 0}), {foo: 0})
+  // Layer
+  t.equal(metadata.layer.title, 'Satellite Streets')
+  t.equal(metadata.layer.identifier, 'ciy23jhla008n2soz34kg2p4u')
+  t.equal(metadata.layer.abstract, '© OSM, © DigitalGlobe')
+  t.equal(metadata.layer.format, 'image/jpeg')
+  t.equal(metadata.layer.minzoom, 0)
+  t.equal(metadata.layer.maxzoom, 20)
+  t.deepEqual(metadata.layer.bbox, [-180, -85.051129, 179.976804, 85.051129])
   t.end()
 })

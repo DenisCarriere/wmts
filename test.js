@@ -35,8 +35,8 @@ const options = {
  * @param {string} fixture
  */
 function compare (t, data, fixture) {
-  var fullpath = path.join(__dirname, 'test', fixture)
-  let xml = data
+  const fullpath = path.join(__dirname, 'test', fixture)
+  var xml = data
   if (typeof (data) !== 'string') { xml = convert.js2xml(data, {compact: true, spaces}) }
   if (process.env.REGEN) { fs.writeFileSync(fullpath, xml, 'utf-8') }
   t.equal(xml, fs.readFileSync(fullpath, 'utf-8'), fixture)

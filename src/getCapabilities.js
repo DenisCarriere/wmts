@@ -1,7 +1,7 @@
 const convert = require('xml-js')
-const utils = require('./utils')
 const mercator = require('global-mercator')
-const range = utils.range
+const utils = require('./utils')
+const range = mercator.range
 const normalize = utils.normalize
 const clean = utils.clean
 

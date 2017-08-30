@@ -1,7 +1,7 @@
 {
-  "name": "wmts",
-  "version": "1.8.1",
-  "description": "WMTS scheme for Javascript applications",
+  "name": "ogc-parser",
+  "version": "2.0.0",
+  "description": "Parser to convert OGC WMTS/WMS XML schemas to human friendly JSON.",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
@@ -30,8 +30,7 @@
     "tape": "^4.6.3"
   },
   "dependencies": {
-    "global-mercator": "^2.7.0",
-    "wmts": "^1.7.2",
-    "xml-js": "^1.2.2"
+    "global-mercator": "^2.8.4",
+    "xml-js": "^1.4.1"
   }
 }

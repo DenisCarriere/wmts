@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.0 - 2017-08-30
+
+- Change Library name from `wmts` to `ogc-parser`
+
 ## 1.8.0 - 2017-06-16
 
 - Add Mercator Bounding Box

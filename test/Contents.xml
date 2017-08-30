@@ -23,7 +23,7 @@
   </Layer>
   <TileMatrixSet>
     <ows:Title>GoogleMapsCompatible</ows:Title>
-    <ows:Abstract>the wellknown &#39;GoogleMapsCompatible&#39; tile matrix set defined by OGC WMTS specification</ows:Abstract>
+    <ows:Abstract>the wellknown 'GoogleMapsCompatible' tile matrix set defined by OGC WMTS specification</ows:Abstract>
     <ows:Identifier>GoogleMapsCompatible</ows:Identifier>
     <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18.3:3857</ows:SupportedCRS>
     <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>

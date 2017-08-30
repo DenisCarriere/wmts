@@ -1,27 +1,27 @@
-# WMTS
+# OGC Parser
 
-[![Build Status](https://travis-ci.org/DenisCarriere/wmts.svg?branch=master)](https://travis-ci.org/DenisCarriere/wmts)
-[![npm version](https://badge.fury.io/js/wmts.svg)](https://badge.fury.io/js/wmts)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/DenisCarriere/wmts/master/LICENSE)
+[![Build Status](https://travis-ci.org/DenisCarriere/ogc-parser.svg?branch=master)](https://travis-ci.org/DenisCarriere/ogc-parser)
+[![npm version](https://badge.fury.io/js/ogc-parser.svg)](https://badge.fury.io/js/ogc-parser)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/DenisCarriere/ogc-parser/master/LICENSE)
 
 <!-- Line Break -->
 
 [![Standard - JavaScript Style Guide](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-> Flexible WMTS scheme for Javascript applications.
+> Parser to convert OGC WMTS/WMS XML schemas to human friendly JSON.
 
 ## Install
 
 **npm**
 
 ```bash
-$ yarn add wmts
+$ npm install --save ogc-parser
 ```
 
 **web browser ([ES5](https://kangax.github.io/compat-table/es5))**
 
 ```html
-<script src="https://unpkg.com/wmts/docs/wmts.min.js"></script>
+<script src="https://wzrd.in/standalone/ogc-parser@latest"></script>
 ```
 
 ## Quickstart

@@ -1,11 +1,18 @@
 const xpath = require('xpath')
+const URL = require('url')
 const DOMParser = require('xmldom').DOMParser
-const utils = require('./utils')
-const clean = utils.clean
+
+// Use OGC namespace
 const select = xpath.useNamespaces({
   'ows': 'http://www.opengis.net/ows/1.1',
   'xlink': 'http://www.w3.org/1999/xlink'
 })
+
+/**
+ * BBox
+ *
+ * @typedef {[number, number, number, number]} BBox
+ */
 
 /**
  * WMTS Metadata
@@ -27,7 +34,7 @@ const select = xpath.useNamespaces({
  * @property {string} resourceURL
  * @property {number} minzoom
  * @property {number} maxzoom
- * @property {[number, number, number, number]} bbox
+ * @property {BBox} bbox
  * @property {string[]} tileMatrixSets
  */
 
@@ -44,12 +51,21 @@ const select = xpath.useNamespaces({
  * WMTS Metadata.Layer.URL
  *
  * @typedef {Object} URL
+ * @property {string} protocol
+ * @property {string} port
  * @property {string} host
- * @property {string} slippy
+ * @property {string} auth
  * @property {string} getCapabilities
  * @property {string} getTile
+ * @property {string} query
  */
 
+/**
+ * Select Zooms
+ *
+ * @param {Document} node
+ * @returns {{minzoom: number, maxzoom: number}} Zooms
+ */
 function selectZooms (node) {
   const identifiers = select('//TileMatrixSet/TileMatrix/ows:Identifier', node)
   let minzoom
@@ -65,6 +81,12 @@ function selectZooms (node) {
   }
 }
 
+/**
+ * Select BBox
+ *
+ * @param {Document} node
+ * @returns {BBox} BBox
+ */
 function selectBBox (node) {
   var southwest = select('string(//ows:WGS84BoundingBox//ows:LowerCorner)', node, true)
   var northeast = select('string(//ows:WGS84BoundingBox//ows:UpperCorner)', node, true)
@@ -80,20 +102,6 @@ function selectBBox (node) {
  *
  * @param {Document} doc
  * @returns {Layer} layer
- * @example
- * <Layer>
- *   <ows:Title>Satellite Streets</ows:Title>
- *   <ows:Identifier>ciy23jhla008n2soz34kg2p4u</ows:Identifier>
- *   <ows:Abstract>© OSM, © DigitalGlobe</ows:Abstract>
- *   <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
- *     <ows:LowerCorner>-180 -85.051129</ows:LowerCorner>
- *     <ows:UpperCorner>179.976804 85.051129</ows:UpperCorner>
- *   </ows:WGS84BoundingBox>
- *   <Style isDefault="true"><ows:Identifier>default</ows:Identifier></Style>
- *   <Format>image/jpeg</Format>
- *   <TileMatrixSetLink><TileMatrixSet>GoogleMapsCompatible</TileMatrixSet></TileMatrixSetLink>
- *   <ResourceURL format="image/jpeg" resourceType="tile" template="https://api.mapbox.com/styles/v1/addxy/ciy23jhla008n2soz34kg2p4u/tiles/{TileMatrix}/{TileCol}/{TileRow}?access_token=pk.eyJ1IjoiYWRkeHkiLCJhIjoiY2lsdmt5NjZwMDFsdXZka3NzaGVrZDZtdCJ9.ZUE-LebQgHaBduVwL68IoQ"/>
- * </Layer>
  */
 function layer (doc) {
   const title = select('string(//Layer/ows:Title)', doc, true)
@@ -122,9 +130,19 @@ function layer (doc) {
  * @returns {URL} url
  */
 function url (doc) {
-  const host = select("string(//*[name()='ows:ServiceType'])", doc)
+  const getTile = select('string(//ows:Operation[@name="GetTile"]//ows:Get/@xlink:href)', doc, true)
+  let getCapabilities = select('string(//ows:Operation[@name="GetCapabilities"]//ows:Get/@xlink:href)', doc, true)
+  if (!getCapabilities) getCapabilities = select('string(//ServiceMetadataURL/@xlink:href)', doc, true)
+  const parse = URL.parse(getCapabilities)
+
   return {
-    host: host
+    protocol: parse.protocol,
+    port: parse.port,
+    host: parse.host,
+    auth: parse.auth,
+    getCapabilities: getCapabilities,
+    getTile: getTile,
+    query: parse.query
   }
 }
 
@@ -135,9 +153,9 @@ function url (doc) {
  * @returns {Service} service
  */
 function service (doc) {
-  const type = select("string(//*[name()='ows:ServiceType'])", doc)
-  const version = select("string(//*[name()='ows:ServiceTypeVersion'])", doc)
-  const title = select("string(//*[name()='ows:Title'])", doc)
+  const type = select('string(//ows:ServiceType)', doc, true)
+  const version = select('string(//ows:ServiceTypeVersion)', doc, true)
+  const title = select('string(//ows:Title)', doc, true)
   return {
     type: type,
     version: version,
@@ -152,12 +170,11 @@ function service (doc) {
  * @returns {Metadata} WMTS Metadata
  */
 module.exports = function (xml) {
-  // Remove xmlns="http://www.opengis.net/wmts/1.0"
   xml = xml.replace(/xmlns="[\S]+"/, '')
   const doc = new DOMParser().parseFromString(xml)
-  return clean({
+  return {
     service: service(doc),
     layer: layer(doc),
     url: url(doc)
-  })
+  }
 }

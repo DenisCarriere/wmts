@@ -23,6 +23,12 @@
 		]
 	},
 	"url": {
-		"host": "OGC WMTS"
+		"protocol": "https:",
+		"port": null,
+		"host": "services.arcgisonline.com",
+		"auth": null,
+		"getCapabilities": "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/1.0.0/WMTSCapabilities.xml",
+		"getTile": "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/tile/1.0.0/",
+		"query": null
 	}
 }

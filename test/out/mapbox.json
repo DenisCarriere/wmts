@@ -1,0 +1,27 @@
+{
+	"service": {
+		"type": "OGC WMTS",
+		"version": "1.0.0",
+		"title": "Mapbox"
+	},
+	"layer": {
+		"title": "Satellite Streets",
+		"abstract": "© OSM, © DigitalGlobe",
+		"identifier": "ciy23jhla008n2soz34kg2p4u",
+		"format": "image/jpeg",
+		"bbox": [
+			-180,
+			-85.051129,
+			179.976804,
+			85.051129
+		],
+		"minzoom": 0,
+		"maxzoom": 20,
+		"tileMatrixSets": [
+			"GoogleMapsCompatible"
+		]
+	},
+	"url": {
+		"host": "OGC WMTS"
+	}
+}

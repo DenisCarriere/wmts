@@ -2,8 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const test = require('tape')
 const convert = require('xml-js')
-const utils = require('./src/utils')
-const wmts = require('./src/wmts')
+const wmts = require('./')
 
 // Variables
 const title = 'Tile Service'
@@ -57,8 +56,8 @@ test('wmts', t => {
 })
 
 test('utils', t => {
-  t.deepEqual(utils.clean({foo: 10, bar: undefined}), {foo: 10})
-  t.deepEqual(utils.clean({foo: undefined, bar: undefined}), {})
-  t.deepEqual(utils.clean({foo: 0}), {foo: 0})
+  t.deepEqual(wmts.clean({foo: 10, bar: undefined}), {foo: 10})
+  t.deepEqual(wmts.clean({foo: undefined, bar: undefined}), {})
+  t.deepEqual(wmts.clean({foo: 0}), {foo: 0})
   t.end()
 })

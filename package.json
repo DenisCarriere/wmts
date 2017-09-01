@@ -1,13 +1,12 @@
 {
   "name": "wmts",
-  "version": "1.8.1",
+  "version": "2.0.0",
   "description": "WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
     "index.js",
-    "index.d.ts",
-    "src"
+    "index.d.ts"
   ],
   "scripts": {
     "test": "tape test.js",

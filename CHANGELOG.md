@@ -2,7 +2,8 @@
 
 ## 2.0.0 - 2017-08-30
 
-- Change Library name from `wmts` to `ogc-parser`
+- Convert library to single funciton library `wmts(options)` instead of `wmts.getCapabilities(options)`.
+- Make tests compatible with NodeJS 4
 
 ## 1.8.0 - 2017-06-16
 

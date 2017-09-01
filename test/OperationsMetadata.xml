@@ -1,0 +1,38 @@
+<ows:OperationsMetadata>
+  <ows:Operation name="GetCapabilities">
+    <ows:DCP>
+      <ows:HTTP>
+        <ows:Get xlink:href="http://localhost:80/WMTS/1.0.0/WMTSCapabilities.xml">
+          <ows:Constraint name="GetEncoding"/>
+          <ows:AllowedValues>
+            <ows:Value>RESTful</ows:Value>
+          </ows:AllowedValues>
+        </ows:Get>
+        <ows:Get xlink:href="http://localhost:80/WMTS?">
+          <ows:Constraint name="GetEncoding"/>
+          <ows:AllowedValues>
+            <ows:Value>KVP</ows:Value>
+          </ows:AllowedValues>
+        </ows:Get>
+      </ows:HTTP>
+    </ows:DCP>
+  </ows:Operation>
+  <ows:Operation name="GetTile">
+    <ows:DCP>
+      <ows:HTTP>
+        <ows:Get xlink:href="http://localhost:80/WMTS/tile/1.0.0/">
+          <ows:Constraint name="GetEncoding"/>
+          <ows:AllowedValues>
+            <ows:Value>RESTful</ows:Value>
+          </ows:AllowedValues>
+        </ows:Get>
+        <ows:Get xlink:href="http://localhost:80/WMTS?">
+          <ows:Constraint name="GetEncoding"/>
+          <ows:AllowedValues>
+            <ows:Value>KVP</ows:Value>
+          </ows:AllowedValues>
+        </ows:Get>
+      </ows:HTTP>
+    </ows:DCP>
+  </ows:Operation>
+</ows:OperationsMetadata>

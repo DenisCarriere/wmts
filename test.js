@@ -1,70 +1,64 @@
 const fs = require('fs')
 const path = require('path')
 const test = require('tape')
-const write = require('write-json-file')
-const load = require('load-json-file')
+const convert = require('xml-js')
+const utils = require('./src/utils')
 const wmts = require('./src/wmts')
 
-// Utils
-const testIn = (filename) => path.join(__dirname, 'test', 'in', filename)
-const testOut = (filename) => path.join(__dirname, 'test', 'out', filename)
+// Variables
+const title = 'Tile Service'
+const abstract = '© OSM data'
+const minzoom = 10
+const maxzoom = 18
+const url = 'http://localhost:80/WMTS'
+const keywords = ['world', 'imagery', 'wmts']
+const format = 'jpg'
+const bbox = [-180, -85, 180, 85]
+const spaces = 2
+const options = {
+  title,
+  spaces,
+  abstract,
+  minzoom,
+  maxzoom,
+  bbox,
+  url,
+  keywords,
+  format
+}
 
-// XML Documents
-const arcgis = fs.readFileSync(testIn('ArcGIS-online.xml'), 'utf8')
-const mapbox = fs.readFileSync(testIn('MapboxStudio.xml'), 'utf8')
+/**
+ * Jest compare helper
+ *
+ * @param {ElementCompact} json
+ * @param {string} fixture
+ */
+function compare (t, data, fixture) {
+  const fullpath = path.join(__dirname, 'test', fixture)
+  var xml = data
+  if (typeof (data) !== 'string') { xml = convert.js2xml(data, {compact: true, spaces}) }
+  if (process.env.REGEN) fs.writeFileSync(fullpath, xml, 'utf-8')
+  t.equal(xml, fs.readFileSync(fullpath, 'utf-8'), fixture)
+}
 
-test('wmts -- ArcGIS Online', t => {
-  const metadata = wmts(arcgis)
-  // Service
-  t.equal(metadata.service.type, 'OGC WMTS', 'service.type')
-  t.equal(metadata.service.version, '1.0.0', 'service.version')
-  t.equal(metadata.service.title, 'World_Imagery', 'service.title')
-
-  // Layer
-  t.equal(metadata.layer.title, 'World_Imagery', 'layer.title')
-  t.equal(metadata.layer.identifier, 'World_Imagery', 'layer.identifier')
-  t.equal(metadata.layer.abstract, '', 'layer.abstract')
-  t.equal(metadata.layer.format, 'image/jpeg', 'layer.format')
-  t.equal(metadata.layer.minzoom, 0, 'layer.minzoom')
-  t.equal(metadata.layer.maxzoom, 23, 'layer.maxzoom')
-  t.deepEqual(metadata.layer.bbox, [-179.99999000000003, -85.00000000000003, 179.99999000000003, 85.0], 'layer.bbox')
-  t.deepEqual(metadata.layer.tileMatrixSets, ['default028mm', 'GoogleMapsCompatible'], 'layer.tileMatrixSets')
-
-  // URL
-  t.equal(metadata.url.host, 'services.arcgisonline.com')
-  t.equal(metadata.url.getTile, 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/tile/1.0.0/')
-  t.equal(metadata.url.getCapabilities, 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/WMTS/1.0.0/WMTSCapabilities.xml')
-
-  // JSON
-  if (process.env.REGEN) write.sync(testOut('arcgis.json'), metadata)
-  t.deepEqual(metadata, load.sync(testOut('arcgis.json')), 'json')
+test('wmts', t => {
+  compare(t, wmts(options), 'WMTSCapabilities.xml')
+  compare(t, wmts.GoogleMapsCompatible(minzoom, maxzoom), 'GoogleMapsCompatible.xml')
+  compare(t, wmts.TileMatrix(minzoom, maxzoom), 'TileMatrix.xml')
+  compare(t, wmts.ServiceIdentification(options), 'ServiceIdentification.xml')
+  compare(t, wmts.Contents(options), 'Contents.xml')
+  compare(t, wmts.OperationsMetadata(url), 'OperationsMetadata.xml')
+  compare(t, wmts.Layer(options), 'Layer.xml')
+  compare(t, wmts.Keywords(['foo', 'bar']), 'Keywords.xml')
+  t.throws(() => wmts())
+  t.throws(() => wmts({url}))
+  t.throws(() => wmts({url, title}))
   t.end()
 })
 
-test('wmts -- Mapbox Studio', t => {
-  const metadata = wmts(mapbox)
-  // Service
-  t.equal(metadata.service.type, 'OGC WMTS', 'service.type')
-  t.equal(metadata.service.version, '1.0.0', 'service.version')
-  t.equal(metadata.service.title, 'Mapbox', 'service.title')
-
-  // Layer
-  t.equal(metadata.layer.title, 'Satellite Streets', 'layer.title')
-  t.equal(metadata.layer.identifier, 'ciy23jhla008n2soz34kg2p4u', 'layer.identifier')
-  t.equal(metadata.layer.abstract, '© OSM, © DigitalGlobe', 'layer.abstract')
-  t.equal(metadata.layer.format, 'image/jpeg', 'layer.format')
-  t.equal(metadata.layer.minzoom, 0, 'layer.minzoom')
-  t.equal(metadata.layer.maxzoom, 20, 'layer.maxzoom')
-  t.deepEqual(metadata.layer.bbox, [-180, -85.051129, 179.976804, 85.051129], 'layer.bbox')
-  t.deepEqual(metadata.layer.tileMatrixSets, ['GoogleMapsCompatible'], 'layer.tileMatrixSets')
-
-  // URL
-  t.equal(metadata.url.host, 'api.mapbox.com')
-  t.equal(metadata.url.getTile, 'https://api.mapbox.com/styles/v1/addxy/ciy23jhla008n2soz34kg2p4u/wmts?access_token=pk.eyJ1IjoiYWRkeHkiLCJhIjoiY2lsdmt5NjZwMDFsdXZka3NzaGVrZDZtdCJ9.ZUE-LebQgHaBduVwL68IoQ')
-  t.equal(metadata.url.getCapabilities, 'https://api.mapbox.com/styles/v1/addxy/ciy23jhla008n2soz34kg2p4u/wmts?access_token=pk.eyJ1IjoiYWRkeHkiLCJhIjoiY2lsdmt5NjZwMDFsdXZka3NzaGVrZDZtdCJ9.ZUE-LebQgHaBduVwL68IoQ')
-
-  // JSON
-  if (process.env.REGEN) write.sync(testOut('mapbox.json'), metadata)
-  t.deepEqual(metadata, load.sync(testOut('mapbox.json')), 'json')
+test('utils', t => {
+  t.deepEqual(utils.clean({foo: 10, bar: undefined}), {foo: 10})
+  t.deepEqual(utils.clean({foo: undefined, bar: undefined}), {})
+  t.deepEqual(utils.clean({foo: 0}), {foo: 0})
   t.end()
 })

@@ -1,7 +1,5 @@
-const parseCapabilities = require('./src/parseCapabilities')
-const getCapabilities = require('./src/getCapabilities')
+const wmts = require('./src/wmts')
 
 module.exports = {
-  parseCapabilities: parseCapabilities,
-  getCapabilities: getCapabilities.getCapabilities
+  wmts: wmts.getCapabilities
 }

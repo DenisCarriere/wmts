@@ -1,7 +1,7 @@
 {
-  "name": "ogc-parser",
-  "version": "2.0.0",
-  "description": "Parser to convert OGC WMTS/WMS XML schemas to human friendly JSON.",
+  "name": "wmts",
+  "version": "1.8.1",
+  "description": "WMTS scheme for Javascript applications",
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
@@ -10,7 +10,7 @@
     "src"
   ],
   "scripts": {
-    "test": "node test.js",
+    "test": "tape test.js",
     "lint": "standard"
   },
   "author": "Denis Carriere <@DenisCarriere>",
@@ -26,13 +26,12 @@
     "scheme"
   ],
   "devDependencies": {
-    "load-json-file": "^3.0.0",
     "standard": "^8.6.0",
-    "tape": "^4.6.3",
-    "write-json-file": "^2.2.0"
+    "tape": "^4.6.3"
   },
   "dependencies": {
-    "xmldom": "^0.1.27",
-    "xpath": "^0.0.24"
+    "global-mercator": "^2.7.0",
+    "wmts": "^1.7.2",
+    "xml-js": "^1.2.2"
   }
 }

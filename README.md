@@ -1,29 +1,27 @@
-# OGC Parser
+# WMTS
 
-[![Build Status](https://travis-ci.org/DenisCarriere/ogc-parser.svg?branch=master)](https://travis-ci.org/DenisCarriere/ogc-parser)
-[![npm version](https://badge.fury.io/js/ogc-parser.svg)](https://badge.fury.io/js/ogc-parser)
-[![Coverage Status](https://coveralls.io/repos/github/DenisCarriere/ogc-parser/badge.svg?branch=master)](https://coveralls.io/github/DenisCarriere/ogc-parser?branch=master)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/DenisCarriere/ogc-parser/master/LICENSE)
-[![ES5](https://camo.githubusercontent.com/d341caa63123c99b79fda7f8efdc29b35f9f2e70/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f65732d352d627269676874677265656e2e737667)](http://kangax.github.io/compat-table/es5/)
+[![Build Status](https://travis-ci.org/DenisCarriere/wmts.svg?branch=master)](https://travis-ci.org/DenisCarriere/wmts)
+[![npm version](https://badge.fury.io/js/wmts.svg)](https://badge.fury.io/js/wmts)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/DenisCarriere/wmts/master/LICENSE)
 
 <!-- Line Break -->
 
 [![Standard - JavaScript Style Guide](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-> Parser to convert OGC WMTS/WMS XML schemas to human friendly JSON.
+> Flexible WMTS scheme for Javascript applications.
 
 ## Install
 
 **npm**
 
 ```bash
-$ npm install --save ogc-parser
+$ yarn add wmts
 ```
 
 **web browser ([ES5](https://kangax.github.io/compat-table/es5))**
 
 ```html
-<script src="https://wzrd.in/standalone/ogc-parser@latest"></script>
+<script src="https://unpkg.com/wmts/docs/wmts.min.js"></script>
 ```
 
 ## Quickstart

@@ -1,180 +1,352 @@
-const xpath = require('xpath')
-const URL = require('url')
-const DOMParser = require('xmldom').DOMParser
+const convert = require('xml-js')
+const utils = require('./utils')
+const mercator = require('global-mercator')
+const range = utils.range
+const normalize = utils.normalize
+const clean = utils.clean
 
-// Use OGC namespace
-const select = xpath.useNamespaces({
-  'ows': 'http://www.opengis.net/ows/1.1',
-  'xlink': 'http://www.w3.org/1999/xlink'
-})
-
-/**
- * BBox
- *
- * @typedef {[number, number, number, number]} BBox
- */
+// Default Values
+const MINZOOM = 0
+const MAXZOOM = 20
+const SPACES = 2
+const BBOX = [-180, -85, 180, 85]
 
 /**
- * WMTS Metadata
+ * Get Capabilities
  *
- * @typedef {Object} Metadata
- * @property {Layer} layer
- * @property {Service} service
- * @property {URL} url
+ * @param {Options} options Options
+ * @param {string} options.url URL of WMTS service
+ * @param {string} options.title Title of service
+ * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
+ * @param {number} [options.minzoom=0] Minimum zoom level
+ * @param {number} [options.maxzoom=22] Maximum zoom level
+ * @param {string} [options.accessConstraints] Access Constraints
+ * @param {string} [options.fees] Fees
+ * @param {string} [options.abstract] Abstract
+ * @param {string} [options.identifier] Identifier
+ * @param {string[]} [options.keywords] Keywords
+ * @param {BBox} [options.bbox] BBox [west, south, east, north]
+ * @param {number} [options.spaces=2] Spaces created for XML output
+ * @returns {string} XML string
+ * @example
+ * const xml = wmts({
+ *   url: 'http://localhost:5000/WMTS',
+ *   title: 'Tile Service XYZ',
+ *   identifier: 'service-123',
+ *   abstract: '© OSM data',
+ *   keyword: ['world', 'imagery', 'wmts'],
+ *   format: 'png',
+ *   minzoom: 10,
+ *   maxzoom: 18,
+ *   bbox: [-180, -85, 180, 85]
+ * })
  */
+module.exports = function (options) {
+  // Validation
+  options = options || {}
+  if (!options.url) throw new Error('<url> is required')
+  if (!options.title) throw new Error('<title> required')
+  if (!options.format) throw new Error('<format> is required')
 
-/**
- * WMTS Metadata.Layer
- *
- * @typedef {Object} Layer
- * @property {string} title
- * @property {string} identifier
- * @property {string} format
- * @property {string} abstract
- * @property {string} resourceURL
- * @property {number} minzoom
- * @property {number} maxzoom
- * @property {BBox} bbox
- * @property {string[]} tileMatrixSets
- */
+  // Define Options
+  const spaces = options.spaces || SPACES
+  options.url = normalize(options.url)
 
-/**
- * WMTS Metadata.Service
- *
- * @typedef {Object} Service
- * @property {string} type
- * @property {string} version
- * @property {string} title
- */
+  // XML header
+  const _declaration = {_attributes: { version: '1.0', encoding: 'utf-8' }}
 
- /**
- * WMTS Metadata.Layer.URL
- *
- * @typedef {Object} URL
- * @property {string} protocol
- * @property {string} port
- * @property {string} host
- * @property {string} auth
- * @property {string} getCapabilities
- * @property {string} getTile
- * @property {string} query
- */
-
-/**
- * Select Zooms
- *
- * @param {Document} node
- * @returns {{minzoom: number, maxzoom: number}} Zooms
- */
-function selectZooms (node) {
-  const identifiers = select('//TileMatrixSet/TileMatrix/ows:Identifier', node)
-  let minzoom
-  let maxzoom
-  for (const identifier of identifiers) {
-    const zoom = Number(identifier.textContent)
-    if (zoom < minzoom || minzoom === undefined) minzoom = zoom
-    if (zoom > maxzoom || maxzoom === undefined) maxzoom = zoom
+  // Define JSON
+  const json = {
+    _declaration: _declaration,
+    Capabilities: Capabilities(options).Capabilities
   }
+  const xml = convert.js2xml(json, { compact: true, spaces: spaces })
+  return xml
+}
+
+/**
+ * Capabilities JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @param {string} options.url URL of WMTS service
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Capabilities({
+ *   url: 'http://localhost:5000'
+ * })
+ */
+function Capabilities (options) {
   return {
-    minzoom: minzoom,
-    maxzoom: maxzoom
+    Capabilities: Object.assign({
+      _attributes: {
+        xmlns: 'http://www.opengis.net/wmts/1.0',
+        'xmlns:ows': 'http://www.opengis.net/ows/1.1',
+        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+        'xmlns:gml': 'http://www.opengis.net/gml',
+        'xsi:schemaLocation': 'http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd',
+        version: '1.0.0'
+      }
+    },
+      ServiceIdentification(options),
+      OperationsMetadata(options.url),
+      Contents(options),
+      {ServiceMetadataURL: {_attributes: { 'xlink:href': options.url + '/1.0.0/WMTSCapabilities.xml' }}}
+    )
   }
 }
 
 /**
- * Select BBox
+ * GoogleMapsCompatible JSON scheme
  *
- * @param {Document} node
- * @returns {BBox} BBox
+ * @private
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * wmts.GoogleMapsCompatible(10, 17)
  */
-function selectBBox (node) {
-  var southwest = select('string(//ows:WGS84BoundingBox//ows:LowerCorner)', node, true)
-  var northeast = select('string(//ows:WGS84BoundingBox//ows:UpperCorner)', node, true)
-  if (southwest && northeast) {
-    southwest = southwest.split(' ')
-    northeast = northeast.split(' ')
-    return [Number(southwest[0]), Number(southwest[1]), Number(northeast[0]), Number(northeast[1])]
-  }
-}
-
-/**
- * Parse Layer
- *
- * @param {Document} doc
- * @returns {Layer} layer
- */
-function layer (doc) {
-  const title = select('string(//Layer/ows:Title)', doc, true)
-  const identifier = select('string(//Layer/ows:Identifier)', doc, true)
-  const abstract = select('string(//Layer/ows:Abstract)', doc, true)
-  const format = select('string(//Layer/Format)', doc, true)
-  const tileMatrixSets = select('//Layer/TileMatrixSetLink/TileMatrixSet', doc).map(tileMatrixSet => tileMatrixSet.textContent)
-  const bbox = selectBBox(doc)
-  const zooms = selectZooms(doc)
+function GoogleMapsCompatible (minzoom, maxzoom) {
+  minzoom = (minzoom !== undefined) ? minzoom : MINZOOM
+  maxzoom = (maxzoom !== undefined) ? maxzoom : MAXZOOM
   return {
-    title: title,
-    abstract: abstract,
-    identifier: identifier,
-    format: format,
-    bbox: bbox,
-    minzoom: zooms.minzoom,
-    maxzoom: zooms.maxzoom,
-    tileMatrixSets: tileMatrixSets
+    TileMatrixSet: {
+      'ows:Title': {_text: 'GoogleMapsCompatible'},
+      'ows:Abstract': {_text: "the wellknown 'GoogleMapsCompatible' tile matrix set defined by OGC WMTS specification"},
+      'ows:Identifier': {_text: 'GoogleMapsCompatible'},
+      'ows:SupportedCRS': {_text: 'urn:ogc:def:crs:EPSG:6.18.3:3857'},
+      WellKnownScaleSet: {_text: 'urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible'},
+      TileMatrix: TileMatrix(minzoom, maxzoom).TileMatrix
+    }
   }
 }
 
 /**
- * Parse URL
+ * TileMatrix JSON scheme
  *
- * @param {Document} doc
- * @returns {URL} url
+ * @private
+ * @param {number} [minzoom=0] Minimum zoom level
+ * @param {number} [maxzoom=22] Maximum zoom level
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * wmts.TileMatrix(0, 18)
  */
-function url (doc) {
-  const getTile = select('string(//ows:Operation[@name="GetTile"]//ows:Get/@xlink:href)', doc, true)
-  let getCapabilities = select('string(//ows:Operation[@name="GetCapabilities"]//ows:Get/@xlink:href)', doc, true)
-  if (!getCapabilities) getCapabilities = select('string(//ServiceMetadataURL/@xlink:href)', doc, true)
-  const parse = URL.parse(getCapabilities)
+function TileMatrix (minzoom, maxzoom) {
+  minzoom = (minzoom !== undefined) ? minzoom : MINZOOM
+  maxzoom = (maxzoom !== undefined) ? maxzoom : MAXZOOM
+  const TileMatrix = range(minzoom, maxzoom + 1).map(function (zoom) {
+    const matrix = Math.pow(2, zoom)
+    const ScaleDenominator = 559082264.0287178 / matrix
+    return {
+      'ows:Identifier': {_text: String(zoom)},
+      ScaleDenominator: {_text: String(ScaleDenominator)},
+      TopLeftCorner: {_text: '-20037508.34278925 20037508.34278925'},
+      TileWidth: {_text: '256'},
+      TileHeight: {_text: '256'},
+      MatrixWidth: {_text: String(matrix)},
+      MatrixHeight: {_text: String(matrix)}
+    }
+  })
+  return {TileMatrix: TileMatrix}
+}
 
+/**
+ * ServiceIdentification JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @param {string} options.title Title of service
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * ServiceIdentification({
+ *   title: 'Service name',
+ *   abstract: 'A long description of this service',
+ *   keywords: ['world', 'wmts', 'imagery']
+ * })
+ */
+function ServiceIdentification (options) {
+  return clean({
+    'ows:ServiceIdentification': {
+      'ows:Title': {_text: options.title},
+      'ows:ServiceType': {_text: 'OGC WMTS'},
+      'ows:ServiceTypeVersion': {_text: '1.0.0'}
+    }
+  })
+}
+
+/**
+ * Keywords JSON scheme
+ *
+ * @private
+ * @param {string[]} [keywords]
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Keywords(['world', 'imagery', 'wmts'])
+ */
+function Keywords (keywords) {
+  keywords = keywords || []
   return {
-    protocol: parse.protocol,
-    port: parse.port,
-    host: parse.host,
-    auth: parse.auth,
-    getCapabilities: getCapabilities,
-    getTile: getTile,
-    query: parse.query
+    'ows:Keywords': {
+      'ows:Keyword': keywords.map(function (keyword) { return {_text: String(keyword)} })
+    }
   }
 }
 
 /**
- * Parse Service
+ * OperationsMetadata JSON scheme
  *
- * @param {Document} doc
- * @returns {Service} service
+ * @private
+ * @param {string} url URL of Service Provider
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * OperationsMetadata('http://localhost:5000/wmts')
  */
-function service (doc) {
-  const type = select('string(//ows:ServiceType)', doc, true)
-  const version = select('string(//ows:ServiceTypeVersion)', doc, true)
-  const title = select('string(//ows:Title)', doc, true)
+function OperationsMetadata (url) {
   return {
-    type: type,
-    version: version,
-    title: title
+    'ows:OperationsMetadata': {
+      'ows:Operation': [
+        Operation('GetCapabilities', url + '/1.0.0/WMTSCapabilities.xml', url + '?')['ows:Operation'],
+        Operation('GetTile', url + '/tile/1.0.0/', url + '?')['ows:Operation']
+      ]
+    }
   }
 }
 
 /**
- * Parse Capabilities
+ * Operation JSON scheme
  *
- * @param {string} xml
- * @returns {Metadata} WMTS Metadata
+ * @private
+ * @param {string} operation Name of operation
+ * @param {string} restful URL for RESTful
+ * @param {string} kvp URL for KVP
+ * @returns {ElementCompact} JSON scheme
  */
-module.exports = function (xml) {
-  xml = xml.replace(/xmlns="[\S]+"/, '')
-  const doc = new DOMParser().parseFromString(xml)
+function Operation (operation, restful, kvp) {
   return {
-    service: service(doc),
-    layer: layer(doc),
-    url: url(doc)
+    'ows:Operation': {_attributes: {name: operation},
+      'ows:DCP': {
+        'ows:HTTP': {
+          'ows:Get': [Get(restful, 'RESTful')['ows:Get'], Get(kvp, 'KVP')['ows:Get']]
+        }
+      }
+    }
   }
 }
+
+/**
+ * Get JSON scheme
+ *
+ * @private
+ * @param {string} url URL of Service Provider
+ * @param {string} value Type of Get 'RESTful' | 'KVP'
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Get()
+ * //= Get > Constraint > AllowedValues> Value
+ */
+function Get (url, value) {
+  return {
+    'ows:Get': {_attributes: {'xlink:href': url},
+      'ows:Constraint': {_attributes: {name: 'GetEncoding'}},
+      'ows:AllowedValues': {
+        'ows:Value': {_text: value}
+      }
+    }
+  }
+}
+
+/**
+ * Capabilities.Contents JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @returns {Element}
+ * @example
+ * Contents()
+ * //= Contents > [Layer, TileMatrixSet, TileMatrixSet]
+ */
+function Contents (options) {
+  return {
+    Contents: {
+      Layer: Layer(options).Layer,
+      TileMatrixSet: GoogleMapsCompatible(options.minzoom, options.maxzoom).TileMatrixSet
+    }
+  }
+}
+
+/**
+ * Capabilities.Contents.Layer JSON scheme
+ *
+ * @private
+ * @param {Options} options Options
+ * @param {string} options.title Title
+ * @param {string} options.url URL
+ * @param {string} options.format Format 'png' | 'jpeg' | 'jpg'
+ * @param {string} [options.abstract] Abstract
+ * @param {string} [options.identifier] Identifier
+ * @param {BBox} [options.bbox=[-180, -85, 180, 85]] BBox [west, south, east, north]
+ * @returns {ElementCompact} JSON scheme
+ * @example
+ * Layer({
+ *   title: 'Tile Service'
+ *   url: 'http://localhost:5000/wmts'
+ *   format: 'jpg'
+ * })
+ */
+function Layer (options) {
+  // Required options
+  const title = options.title
+  const url = options.url
+  const format = (options.format === 'jpg') ? 'jpeg' : options.format
+
+  // Optional options
+  const abstract = options.abstract
+  const identifier = options.identifier || title
+  const bbox = options.bbox || BBOX
+  const bboxMeters = mercator.bboxToMeters(bbox)
+
+  // Derived Variables
+  const contentType = 'image/' + format
+  const southwest = bbox.slice(0, 2)
+  const northeast = bbox.slice(2, 4)
+  const southwestMeters = bboxMeters.slice(0, 2)
+  const northeastMeters = bboxMeters.slice(2, 4)
+  const template = url + '/tile/1.0.0/' + identifier + '/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}'
+
+  return clean({
+    Layer: {
+      'ows:Title': { _text: title },
+      'ows:Identifier': { _text: identifier },
+      'ows:Abstract': abstract ? { _text: abstract } : undefined,
+      'ows:BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:EPSG::3857' },
+        'ows:LowerCorner': { _text: southwestMeters.join(' ') },
+        'ows:UpperCorner': { _text: northeastMeters.join(' ') }
+      },
+      'ows:WGS84BoundingBox': { _attributes: { crs: 'urn:ogc:def:crs:OGC:2:84' },
+        'ows:LowerCorner': { _text: southwest.join(' ') },
+        'ows:UpperCorner': { _text: northeast.join(' ') }
+      },
+      Style: { _attributes: { isDefault: 'true' },
+        'ows:Title': { _text: 'Default Style' },
+        'ows:Identifier': { _text: 'default' }
+      },
+      Format: { _text: contentType },
+      TileMatrixSetLink: {
+        TileMatrixSet: { _text: 'GoogleMapsCompatible' }
+      },
+      ResourceURL: {_attributes: { format: contentType, resourceType: 'tile', template: template }}
+    }
+  })
+}
+
+module.exports.Capabilities = Capabilities
+module.exports.GoogleMapsCompatible = GoogleMapsCompatible
+module.exports.TileMatrix = TileMatrix
+module.exports.ServiceIdentification = ServiceIdentification
+module.exports.Keywords = Keywords
+module.exports.OperationsMetadata = OperationsMetadata
+module.exports.Operation = Operation
+module.exports.Get = Get
+module.exports.Contents = Contents
+module.exports.Layer = Layer
